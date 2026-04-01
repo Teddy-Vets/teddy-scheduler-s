@@ -8,12 +8,12 @@
   :root {
     --font-inter: 'Noto Sans Hebrew', sans-serif;
     --background: 180 10% 98%;
-    --foreground: 210 20% 10%;
+    --foreground: 30 84% 87%;
     --card: 0 0% 100%;
-    --card-foreground: 210 20% 10%;
+    --card-foreground: 221 100% 65%;
     --popover: 0 0% 100%;
-    --popover-foreground: 210 20% 10%;
-    --primary: 174 62% 32%;
+    --popover-foreground: 210 100% 73%;
+    --primary: 30 65% 93%;
     --primary-foreground: 0 0% 100%;
     --secondary: 180 8% 94%;
     --secondary-foreground: 210 20% 10%;
