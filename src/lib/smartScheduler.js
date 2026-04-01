@@ -289,10 +289,11 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
         });
 
         if (eligible.length === 0) {
-          const roleLabel = targetRole || "any";
+          const roleLabel = targetRole || "כלשהו";
           // Diagnose why all staff were ineligible
           const reasons = [];
           const candidatePool = clinicStaff.filter((m) => targetRole === null || targetRole === undefined || m.staff_role === targetRole);
+          
           const dayOff = candidatePool.filter((m) => (m.regular_days_off || []).map(normDay).includes(dayOfWeek)).length;
           const absent = candidatePool.filter((m) => isAbsent(m, dateStr)).length;
           const busy = candidatePool.filter((m) => [...existingShifts, ...newShifts].some((s) => s.staff_id === m.id && s.date === dateStr && s.status !== "cancelled")).length;
@@ -300,12 +301,27 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
             const cnt = [...existingShifts, ...newShifts].filter((s) => s.staff_id === m.id && s.date >= weekStartStr && s.date <= weekEndStr && s.status !== "cancelled").length;
             return cnt >= maxShiftsPerWeek;
           }).length;
+          const maxConsec = candidatePool.filter((m) => {
+            const consec = consecutiveWorkDaysBefore(m.id, dateStr, [...existingShifts, ...newShifts]);
+            return consec >= maxConsecutiveDays;
+          }).length;
+          const restHours = minRestHours > 0 ? candidatePool.filter((m) => violatesRestHours(m, dateStr, shiftType, [...existingShifts, ...newShifts], minRestHours)).length : 0;
+          const maxFriday = isFriday ? candidatePool.filter((m) => {
+            const fridayLimit = m.max_fridays_per_month != null ? m.max_fridays_per_month : maxFridaysPerMonth;
+            const fridayCount = fridaysThisMonth(m.id, dateStr, [...existingShifts, ...newShifts]);
+            return fridayCount >= fridayLimit;
+          }).length : 0;
+          
           if (dayOff) reasons.push(`${dayOff} יום חופש`);
           if (absent) reasons.push(`${absent} בהיעדרות`);
           if (busy) reasons.push(`${busy} כבר משובצים היום`);
           if (maxWeek) reasons.push(`${maxWeek} הגיעו למקסימום משמרות שבועי`);
-          const reasonStr = reasons.length ? ` (${reasons.join(", ")})` : "";
-          warnings.push(`No eligible ${roleLabel} for "${shiftType.name}" on ${format(date, "EEE, MMM d")}${reasonStr}`);
+          if (maxConsec) reasons.push(`${maxConsec} הגיעו למקסימום ימים רצופים`);
+          if (restHours) reasons.push(`${restHours} אין שעות מנוחה מספיקות`);
+          if (maxFriday) reasons.push(`${maxFriday} הגיעו למקסימום שישי בחודש`);
+          
+          const reasonStr = reasons.length ? ` — ${reasons.join(", ")}` : "";
+          warnings.push(`❌ "${shiftType.name}" ביום ${format(date, "EEE, MMM d")} — אין ${roleLabel} זמין${reasonStr}`);
           continue;
         }
 
