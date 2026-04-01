@@ -88,11 +88,12 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
     ? staff.filter((s) => s.assigned_clinic_ids?.includes(selectedClinicId))
     : staff;
 
-  // Build lookup: staffId+date → shift
+  // Build lookup: staffId+date → array of shifts (a staff member can have multiple shifts in a day)
   const shiftMap = {};
   shifts.forEach((sh) => {
     const key = `${sh.staff_id}__${sh.date}`;
-    if (!shiftMap[key]) shiftMap[key] = sh;
+    if (!shiftMap[key]) shiftMap[key] = [];
+    shiftMap[key].push(sh);
   });
 
   // Legend
@@ -188,7 +189,7 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
                 {/* Day cells */}
                 {days.map((day) => {
                   const dateStr = format(day, "yyyy-MM-dd");
-                  const shift = shiftMap[`${member.id}__${dateStr}`];
+                  const dayShifts = shiftMap[`${member.id}__${dateStr}`] || [];
                   const isDayOff = member.regular_days_off?.includes(day.getDay());
                   const isToday = isSameDay(day, today);
 
@@ -196,20 +197,33 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
                     <td
                       key={dateStr}
                       className={`px-1.5 py-1.5 border-r border-border last:border-r-0 align-top ${
-                        isToday ? "bg-primary/5" : isDayOff && !shift ? "bg-muted/30" : ""
+                        isToday ? "bg-primary/5" : isDayOff && dayShifts.length === 0 ? "bg-muted/30" : ""
                       }`}
                     >
-                      {isDayOff && !shift ? (
+                      {isDayOff && dayShifts.length === 0 ? (
                         <div className="w-full min-h-[56px] flex items-center justify-center">
                           <span className="text-[10px] text-muted-foreground/50 font-medium">יום חופש</span>
                         </div>
                       ) : (
-                        <ShiftCell
-                          shift={shift}
-                          dateStr={dateStr}
-                          staffMember={member}
-                          onCellClick={onCellClick}
-                        />
+                        <div className="flex flex-col gap-1">
+                          {dayShifts.map((shift) => (
+                            <ShiftCell
+                              key={shift.id}
+                              shift={shift}
+                              dateStr={dateStr}
+                              staffMember={member}
+                              onCellClick={onCellClick}
+                            />
+                          ))}
+                          {dayShifts.length === 0 && (
+                            <ShiftCell
+                              shift={null}
+                              dateStr={dateStr}
+                              staffMember={member}
+                              onCellClick={onCellClick}
+                            />
+                          )}
+                        </div>
                       )}
                     </td>
                   );

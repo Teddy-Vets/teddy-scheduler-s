@@ -260,6 +260,7 @@ export default function Shifts() {
         dateStr={cellDate}
         staffMember={cellStaff}
         clinics={clinics}
+        staff={staff}
         onSave={handleCellSave}
         onDelete={(id) => deleteMutation.mutate(id)}
       />

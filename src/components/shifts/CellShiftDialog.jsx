@@ -7,13 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Trash2 } from "lucide-react";
+import { Trash2, UserRound } from "lucide-react";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
 import { getShiftColor } from "./ScheduleBoard";
 
-export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, staffMember, clinics, onSave, onDelete }) {
-  const [form, setForm] = useState({ clinic_id: "", shift_type_id: "", status: "planned", start_time: "", end_time: "" });
+export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, staffMember, clinics, staff = [], onSave, onDelete }) {
+  const [form, setForm] = useState({ clinic_id: "", shift_type_id: "", status: "planned", start_time: "", end_time: "", staff_id: "", staff_name: "" });
 
   useEffect(() => {
     if (!open) return;
@@ -24,10 +24,12 @@ export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, st
         status: shift.status || "planned",
         start_time: shift.start_time || "",
         end_time: shift.end_time || "",
+        staff_id: shift.staff_id || staffMember?.id || "",
+        staff_name: shift.staff_name || staffMember?.name || "",
       });
     } else {
       const defaultClinic = clinics.find((c) => staffMember?.assigned_clinic_ids?.includes(c.id));
-      setForm({ clinic_id: defaultClinic?.id || "", shift_type_id: "", status: "planned", start_time: "", end_time: "" });
+      setForm({ clinic_id: defaultClinic?.id || "", shift_type_id: "", status: "planned", start_time: "", end_time: "", staff_id: staffMember?.id || "", staff_name: staffMember?.name || "" });
     }
   }, [open, shift, staffMember, clinics]);
 
@@ -44,18 +46,27 @@ export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, st
     }));
   };
 
+  const handleStaffChange = (staffId) => {
+    const member = staff.find((m) => m.id === staffId);
+    setForm((prev) => ({ ...prev, staff_id: staffId, staff_name: member?.name || "" }));
+  };
+
   const handleSave = () => {
     const st = shiftTypes.find((t) => t.id === form.shift_type_id);
+    const resolvedStaffId = form.staff_id || staffMember?.id;
+    const resolvedStaffName = form.staff_name || staffMember?.name;
     onSave({
       ...form,
       date: dateStr,
-      staff_id: staffMember.id,
-      staff_name: staffMember.name,
+      staff_id: resolvedStaffId,
+      staff_name: resolvedStaffName,
       clinic_name: selectedClinic?.name || "",
       shift_type_name: st?.name || "",
       is_hard_shift: st?.is_hard || false,
     });
   };
+
+  const clinicStaff = staff.filter((m) => m.assigned_clinic_ids?.includes(form.clinic_id) && m.status !== "inactive");
 
   const selectedType = shiftTypes.find((t) => t.id === form.shift_type_id);
   const color = selectedType ? getShiftColor(selectedType.name, selectedType.is_hard) : null;
@@ -129,6 +140,22 @@ export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, st
             </div>
           </div>
 
+          {shift && clinicStaff.length > 0 && (
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5"><UserRound className="w-3.5 h-3.5" /> החלף עובד</Label>
+              <Select value={form.staff_id} onValueChange={handleStaffChange}>
+                <SelectTrigger><SelectValue placeholder="בחר עובד" /></SelectTrigger>
+                <SelectContent>
+                  {clinicStaff.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.name} · {m.staff_role === "veterinarian" ? "וטרינר" : m.staff_role === "technician" ? "טכנאי" : "קבלה"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {shift && (
             <div className="space-y-2">
               <Label>סטטוס</Label>
@@ -144,10 +171,10 @@ export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, st
           )}
         </div>
 
-        <DialogFooter className="gap-2 mt-2">
+        <DialogFooter className="gap-2 mt-2 flex-wrap">
           {shift && (
-            <Button variant="destructive" size="sm" onClick={() => onDelete(shift.id)} className="ml-auto gap-1">
-              <Trash2 className="w-3.5 h-3.5" /> מחק
+            <Button variant="destructive" size="sm" onClick={() => onDelete(shift.id)} className="gap-1.5 mr-auto">
+              <Trash2 className="w-3.5 h-3.5" /> נקה משמרת
             </Button>
           )}
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>ביטול</Button>
