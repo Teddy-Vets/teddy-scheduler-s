@@ -250,44 +250,50 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
         const globalPool = [...existingShifts, ...newShifts];
 
         const eligible = clinicStaff.filter((member) => {
-          // Role filter (only if a specific role is required)
-          if (targetRole !== null && targetRole !== undefined && member.staff_role !== targetRole) return false;
+           // Role filter (only if a specific role is required)
+           if (targetRole !== null && targetRole !== undefined && member.staff_role !== targetRole) return false;
 
-          // 1. Regular day off
-          const regDaysOff = (member.regular_days_off || []).map(normDay);
-          if (regDaysOff.includes(dayOfWeek)) return false;
+           // 1. Regular day off
+           const regDaysOff = (member.regular_days_off || []).map(normDay);
+           if (regDaysOff.includes(dayOfWeek)) return false;
 
-          // 2. Absence
-          if (isAbsent(member, dateStr)) return false;
+           // 2. Absence
+           if (isAbsent(member, dateStr)) return false;
 
-          // 3. Already has a shift that day
-          const busyToday = globalPool.some(
-            (s) => s.staff_id === member.id && s.date === dateStr && s.status !== "cancelled"
-          );
-          if (busyToday) return false;
+           // 3. Already has a shift that day
+           const busyToday = globalPool.some(
+             (s) => s.staff_id === member.id && s.date === dateStr && s.status !== "cancelled"
+           );
+           if (busyToday) return false;
 
-          // 4. Max shifts per week (count across ALL clinics)
-          const memberWeekCount = globalPool.filter(
-            (s) => s.staff_id === member.id && s.date >= weekStartStr && s.date <= weekEndStr && s.status !== "cancelled"
-          ).length;
-          if (memberWeekCount >= maxShiftsPerWeek) return false;
+           // 4. Max shifts per week (count across ALL clinics)
+           const memberWeekCount = globalPool.filter(
+             (s) => s.staff_id === member.id && s.date >= weekStartStr && s.date <= weekEndStr && s.status !== "cancelled"
+           ).length;
+           if (memberWeekCount >= maxShiftsPerWeek) return false;
 
-          // 5. Max consecutive work days
-          const consec = consecutiveWorkDaysBefore(member.id, dateStr, globalPool);
-          if (consec >= maxConsecutiveDays) return false;
+           // 5. Max consecutive work days
+           const consec = consecutiveWorkDaysBefore(member.id, dateStr, globalPool);
+           if (consec >= maxConsecutiveDays) return false;
 
-          // 6. Min rest hours
-          if (minRestHours > 0 && violatesRestHours(member, dateStr, shiftType, globalPool, minRestHours)) return false;
+           // 6. Min rest hours
+           if (minRestHours > 0 && violatesRestHours(member, dateStr, shiftType, globalPool, minRestHours)) return false;
 
-          // 7. Max Fridays per month (per-staff override or clinic default)
-          if (isFriday) {
-            const fridayLimit = member.max_fridays_per_month != null ? member.max_fridays_per_month : maxFridaysPerMonth;
-            const fridayCount = fridaysThisMonth(member.id, dateStr, globalPool);
-            if (fridayCount >= fridayLimit) return false;
-          }
+           // 7. Max Fridays per month (per-staff override or clinic default)
+           if (isFriday) {
+             const fridayLimit = member.max_fridays_per_month != null ? member.max_fridays_per_month : maxFridaysPerMonth;
+             const fridayCount = fridaysThisMonth(member.id, dateStr, globalPool);
+             if (fridayCount >= fridayLimit) return false;
+           }
 
-          return true;
-        });
+           // 8. Shift type availability: if member has day preferences, they must match this shift
+           const dayPrefs = member.preferred_shifts_by_day;
+           if (dayPrefs && dayPrefs[dayOfWeek]) {
+             if (dayPrefs[dayOfWeek] !== shiftType.id) return false;
+           }
+
+           return true;
+         });
 
         if (eligible.length === 0) {
           const roleLabels = { veterinarian: "וטרינר", technician: "טכנאי", receptionist: "קבלן/ית" };
