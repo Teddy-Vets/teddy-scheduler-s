@@ -1,101 +1,253 @@
 /**
- * Smart Scheduler Algorithm
- * Generates an optimal shift schedule for a clinic and week.
+ * Smart Scheduler Algorithm — Full Rule Set
  *
- * Strategy:
- * 1. For each day the clinic is open, for each shift type:
- *    a. Collect eligible staff (assigned to clinic, not on day-off, not absent, no double-shift that day)
- *    b. Score each eligible staff member (prefer staff with fewer hard shifts, fewer total shifts this week)
- *    c. Assign the best-scored staff member to the shift
- * 2. Return a list of shift objects ready to be created.
+ * Rules enforced:
+ * 1. Staff must be assigned to the clinic
+ * 2. Skip if absent (absences overlap the date)
+ * 3. Skip if it's a regular day off
+ * 4. No double-booking on the same date
+ * 5. Min rest hours between consecutive shifts (minRestHours)
+ * 6. Max consecutive work days (maxConsecutiveWorkDays)
+ * 7. Max shifts per week (maxShiftsPerWeek)
+ * 8. Max Fridays per month (maxFridaysPerMonth) — only on Fridays
+ *
+ * Scoring / priority (lower = more preferred):
+ * - Preferred shift type gets a big bonus
+ * - Fairness for hard shifts: staff with fewer hard shifts this month get priority
+ * - General load balancing: fewer weekly shifts = preferred
  */
 
-import { format, addDays, startOfWeek, parseISO } from "date-fns";
+import { format, addDays, startOfWeek, differenceInHours, parse, startOfMonth, endOfMonth } from "date-fns";
 
-function isAbsent(staffMember, dateStr) {
-  return (staffMember.absences || []).some(
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function isAbsent(member, dateStr) {
+  return (member.absences || []).some(
     (a) => a.start_date && a.end_date && dateStr >= a.start_date && dateStr <= a.end_date
   );
 }
 
-function scoreStaff(member, existingWeekShifts) {
-  const memberShifts = existingWeekShifts.filter((s) => s.staff_id === member.id);
-  const totalShifts = memberShifts.length;
-  const hardShifts = memberShifts.filter((s) => s.is_hard_shift).length;
-  // Lower score = more preferred (less loaded)
-  return totalShifts * 2 + hardShifts * 3;
+function normDay(d) {
+  return typeof d === "number" ? d : parseFloat(d);
 }
+
+/** Parse "HH:MM" into a comparable minutes-since-midnight number */
+function toMinutes(timeStr) {
+  if (!timeStr) return 0;
+  const [h, m] = timeStr.split(":").map(Number);
+  return h * 60 + m;
+}
+
+/**
+ * Get all shifts for a staff member across allShifts pool,
+ * sorted by date ascending.
+ */
+function getMemberShifts(staffId, allShifts) {
+  return allShifts
+    .filter((s) => s.staff_id === staffId && s.status !== "cancelled")
+    .sort((a, b) => (a.date > b.date ? 1 : -1));
+}
+
+/**
+ * Check if assigning this staff member to shiftType on dateStr would violate
+ * the minimum rest hours rule given existing shifts.
+ */
+function violatesRestHours(member, dateStr, shiftType, allShifts, minRestHours) {
+  if (!minRestHours) return false;
+  const memberShifts = getMemberShifts(member.id, allShifts);
+
+  const newStart = toMinutes(shiftType.start_time);
+  const newEnd = toMinutes(shiftType.end_time);
+  const newStartAbsolute = new Date(`${dateStr}T${shiftType.start_time || "00:00"}:00`);
+
+  for (const sh of memberShifts) {
+    if (sh.date === dateStr) continue; // same-day handled separately
+    const prevEnd = new Date(`${sh.date}T${sh.end_time || "23:59"}:00`);
+    const nextStart = new Date(`${sh.date}T${sh.start_time || "00:00"}:00`);
+
+    // Shift right before our new one
+    const hoursBetween = (newStartAbsolute - prevEnd) / 3600000;
+    if (Math.abs(hoursBetween) < minRestHours && hoursBetween > -24 && hoursBetween < 24) {
+      if (sh.date < dateStr && hoursBetween >= 0 && hoursBetween < minRestHours) return true;
+    }
+
+    // Shift right after our new one
+    const newEndAbsolute = new Date(`${dateStr}T${shiftType.end_time || "23:59"}:00`);
+    const hoursAfter = (nextStart - newEndAbsolute) / 3600000;
+    if (sh.date > dateStr && hoursAfter >= 0 && hoursAfter < minRestHours) return true;
+  }
+  return false;
+}
+
+/**
+ * Count consecutive work days ending on (and including) dateStr for a staff member.
+ */
+function consecutiveWorkDaysBefore(staffId, dateStr, allShifts) {
+  let count = 0;
+  let cursor = new Date(dateStr + "T00:00:00");
+  // Walk backwards day by day
+  for (let i = 1; i <= 14; i++) {
+    cursor = addDays(cursor, -1);
+    const d = format(cursor, "yyyy-MM-dd");
+    const hasShift = allShifts.some((s) => s.staff_id === staffId && s.date === d && s.status !== "cancelled");
+    if (!hasShift) break;
+    count++;
+  }
+  return count;
+}
+
+/**
+ * Count how many Fridays this month the staff member already has (existing + newly proposed).
+ */
+function fridaysThisMonth(staffId, dateStr, allShifts) {
+  const month = dateStr.slice(0, 7); // "YYYY-MM"
+  return allShifts.filter(
+    (s) =>
+      s.staff_id === staffId &&
+      s.status !== "cancelled" &&
+      s.date.startsWith(month) &&
+      new Date(s.date + "T00:00:00").getDay() === 5
+  ).length;
+}
+
+// ─── Scoring ────────────────────────────────────────────────────────────────
+
+/**
+ * Score a candidate for a given shift type.
+ * Lower score = more preferred.
+ */
+function scoreCandidate(member, shiftType, allShifts, weekShifts, monthShifts) {
+  let score = 0;
+
+  // Load: fewer shifts this week → preferred
+  const weekCount = weekShifts.filter((s) => s.staff_id === member.id).length;
+  score += weekCount * 10;
+
+  // Fairness for hard shifts: for a hard shift, staff with fewer hard shifts this month get priority
+  if (shiftType.is_hard) {
+    const hardThisMonth = monthShifts.filter((s) => s.staff_id === member.id && s.is_hard_shift).length;
+    score += hardThisMonth * 20;
+  }
+
+  // Preference: if this is a preferred shift type, big bonus (negative = better)
+  if ((member.preferred_shift_types || []).includes(shiftType.id)) {
+    score -= 50;
+  }
+
+  return score;
+}
+
+// ─── Main Export ─────────────────────────────────────────────────────────────
 
 export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset = 0 }) {
   const today = new Date();
   const weekStart = startOfWeek(addDays(today, weekOffset * 7), { weekStartsOn: 0 });
+  const weekStartStr = format(weekStart, "yyyy-MM-dd");
+  const weekEndStr = format(addDays(weekStart, 6), "yyyy-MM-dd");
 
-  const newShifts = [];
-  const assignedThisRun = {}; // staffId → Set of dates (prevent double-booking in same run)
+  // Month boundaries (for Friday & hard-shift counting)
+  const monthStr = weekStartStr.slice(0, 7);
 
-  const clinicStaff = allStaff.filter(
-    (s) => s.assigned_clinic_ids?.includes(clinic.id) && s.status !== "inactive"
-  );
+  const warnings = [];
+  const newShifts = []; // shifts generated in this run
 
   if (!clinic.shift_types || clinic.shift_types.length === 0) {
     return { shifts: [], warnings: ["No shift types configured for this clinic."] };
   }
 
-  const warnings = [];
-  const activeDays = clinic.active_days || [1, 2, 3, 4, 5];
+  const clinicStaff = allStaff.filter(
+    (s) => s.assigned_clinic_ids?.includes(clinic.id) && s.status !== "inactive"
+  );
+
+  if (clinicStaff.length === 0) {
+    return { shifts: [], warnings: ["No active staff assigned to this clinic."] };
+  }
+
+  const activeDays = (clinic.active_days || [1, 2, 3, 4, 5]).map(normDay);
+
+  const maxShiftsPerWeek = clinic.max_shifts_per_week || 5;
+  const maxConsecutiveDays = clinic.max_consecutive_days || 6;
+  const minRestHours = clinic.min_rest_hours || 0;
+  const maxFridaysPerMonth = clinic.max_fridays_per_month || 4;
 
   for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
     const date = addDays(weekStart, dayIdx);
     const dateStr = format(date, "yyyy-MM-dd");
     const dayOfWeek = date.getDay();
 
-    if (!activeDays.includes(dayOfWeek) && !activeDays.includes(parseFloat(dayOfWeek))) continue;
+    if (!activeDays.includes(dayOfWeek)) continue;
+
+    const isFriday = dayOfWeek === 5;
 
     for (const shiftType of clinic.shift_types) {
-      // Check if a shift already exists for this shift type on this date at this clinic
+      // Skip if already assigned for this slot
       const alreadyExists = existingShifts.some(
-        (s) => s.date === dateStr && s.clinic_id === clinic.id && s.shift_type_id === shiftType.id
+        (s) => s.date === dateStr && s.clinic_id === clinic.id && s.shift_type_id === shiftType.id && s.status !== "cancelled"
       );
       if (alreadyExists) continue;
+      const alreadyGenerated = newShifts.some(
+        (s) => s.date === dateStr && s.shift_type_id === shiftType.id
+      );
+      if (alreadyGenerated) continue;
 
-      // Build week shifts pool (existing + newly generated this run)
-      const weekStartStr = format(weekStart, "yyyy-MM-dd");
-      const weekEndStr = format(addDays(weekStart, 6), "yyyy-MM-dd");
-      const weekShifts = [
-        ...existingShifts.filter((s) => s.date >= weekStartStr && s.date <= weekEndStr && s.clinic_id === clinic.id),
+      // Current pool of all shifts (for this clinic) for eligibility checks
+      const allShiftsPool = [
+        ...existingShifts.filter((s) => s.clinic_id === clinic.id),
         ...newShifts,
       ];
+      const weekShiftsPool = allShiftsPool.filter((s) => s.date >= weekStartStr && s.date <= weekEndStr);
+      const monthShiftsPool = allShiftsPool.filter((s) => s.date.startsWith(monthStr));
 
-      // Eligible staff
+      // Also consider ALL existing shifts (not just clinic) for rest-hours & consecutive checks
+      const globalPool = [...existingShifts, ...newShifts];
+
       const eligible = clinicStaff.filter((member) => {
-        // Skip regular day off (unless already has a shift - edge case)
-        const regDaysOff = member.regular_days_off || [];
-        if (regDaysOff.includes(dayOfWeek) || regDaysOff.includes(parseFloat(dayOfWeek))) return false;
-        // Skip if absent
+        // 1. Regular day off
+        const regDaysOff = (member.regular_days_off || []).map(normDay);
+        if (regDaysOff.includes(dayOfWeek)) return false;
+
+        // 2. Absence
         if (isAbsent(member, dateStr)) return false;
-        // Skip if already assigned this date (existing or this run)
-        const hasShiftOnDate = weekShifts.some((s) => s.staff_id === member.id && s.date === dateStr);
-        if (hasShiftOnDate) return false;
-        // Check max shifts per week
-        const maxPerWeek = clinic.max_shifts_per_week || 5;
-        const staffWeekCount = weekShifts.filter((s) => s.staff_id === member.id).length;
-        if (staffWeekCount >= maxPerWeek) return false;
+
+        // 3. Already has a shift that day
+        const busyToday = globalPool.some(
+          (s) => s.staff_id === member.id && s.date === dateStr && s.status !== "cancelled"
+        );
+        if (busyToday) return false;
+
+        // 4. Max shifts per week
+        const memberWeekCount = weekShiftsPool.filter((s) => s.staff_id === member.id).length;
+        if (memberWeekCount >= maxShiftsPerWeek) return false;
+
+        // 5. Max consecutive work days
+        const consec = consecutiveWorkDaysBefore(member.id, dateStr, globalPool);
+        if (consec >= maxConsecutiveDays) return false;
+
+        // 6. Min rest hours
+        if (minRestHours > 0 && violatesRestHours(member, dateStr, shiftType, globalPool, minRestHours)) return false;
+
+        // 7. Max Fridays per month
+        if (isFriday) {
+          const fridayCount = fridaysThisMonth(member.id, dateStr, [...existingShifts, ...newShifts]);
+          if (fridayCount >= maxFridaysPerMonth) return false;
+        }
+
         return true;
       });
 
       if (eligible.length === 0) {
-        warnings.push(`No available staff for ${shiftType.name} on ${format(date, "EEE MMM d")}`);
+        warnings.push(`No eligible staff for "${shiftType.name}" on ${format(date, "EEE, MMM d")}`);
         continue;
       }
 
-      // Score and sort
-      eligible.sort((a, b) => scoreStaff(a, weekShifts) - scoreStaff(b, weekShifts));
-
-      // Prefer staff who have this as a preferred shift type
-      const preferred = eligible.filter((m) =>
-        (m.preferred_shift_types || []).includes(shiftType.id)
+      // Score candidates
+      eligible.sort(
+        (a, b) =>
+          scoreCandidate(a, shiftType, globalPool, weekShiftsPool, monthShiftsPool) -
+          scoreCandidate(b, shiftType, globalPool, weekShiftsPool, monthShiftsPool)
       );
-      const candidate = preferred.length > 0 ? preferred[0] : eligible[0];
+
+      const candidate = eligible[0];
 
       newShifts.push({
         date: dateStr,

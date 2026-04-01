@@ -124,16 +124,16 @@ export default function Shifts() {
     }, 300);
   };
 
-  const handleConfirmSchedule = async () => {
-    if (!schedulerResult?.shifts?.length) return;
+  const handleConfirmSchedule = async (editedShifts) => {
+    if (!editedShifts?.length) return;
     setIsCreatingShifts(true);
-    for (const shift of schedulerResult.shifts) {
+    for (const shift of editedShifts) {
       await base44.entities.Shift.create(shift);
     }
     queryClient.invalidateQueries({ queryKey: ["shifts"] });
     setIsCreatingShifts(false);
     setSchedulerDialogOpen(false);
-    toast({ title: `${schedulerResult.shifts.length} shifts scheduled`, description: "The smart scheduler has applied your new shifts." });
+    toast({ title: `${editedShifts.length} shifts scheduled`, description: "The smart scheduler has applied your new shifts." });
   };
 
   const filteredShifts = selectedClinicId === "all"
@@ -279,6 +279,9 @@ export default function Shifts() {
         weekOffset={weekOffset}
         onConfirm={handleConfirmSchedule}
         isCreating={isCreatingShifts}
+        clinic={clinics.find((c) => c.id === selectedClinicId)}
+        staff={staff}
+        allShifts={shifts}
       />
 
       <Toaster />
