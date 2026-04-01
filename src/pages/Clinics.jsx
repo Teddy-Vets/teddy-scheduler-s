@@ -32,11 +32,11 @@ export default function Clinics() {
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Clinic.create(data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["clinics"] }); setDialogOpen(false); setSelectedClinic(null); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["clinics"] }); setDialogOpen(false); },
   });
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Clinic.update(id, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["clinics"] }); setDialogOpen(false); setSelectedClinic(null); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["clinics"] }); setDialogOpen(false); },
   });
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Clinic.delete(id),
@@ -177,7 +177,10 @@ export default function Clinics() {
 
       <ClinicFormDialog
         open={dialogOpen}
-        onOpenChange={(v) => { setDialogOpen(v); if (!v) setSelectedClinic(null); }}
+        onOpenChange={(v) => {
+          setDialogOpen(v);
+          if (!v) setTimeout(() => setSelectedClinic(null), 300);
+        }}
         clinic={selectedClinic}
         onSave={handleSave}
       />
