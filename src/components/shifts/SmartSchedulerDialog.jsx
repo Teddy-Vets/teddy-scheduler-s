@@ -109,14 +109,16 @@ export default function SmartSchedulerDialog({
           </div>
 
           {/* Warnings */}
-          {warnings.length > 0 && (
+          {warnings && warnings.length > 0 && (
             <div className="space-y-1.5">
               <p className="text-sm font-semibold flex items-center gap-1.5 text-amber-600">
                 <AlertTriangle className="w-4 h-4" /> {warnings.length} אזהרה{warnings.length > 1 ? "ות" : ""}
               </p>
-              <div className="space-y-1 max-h-[100px] overflow-y-auto">
-                {warnings.map((w, i) => (
-                  <div key={i} className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{w}</div>
+              <div className="space-y-1 max-h-[120px] overflow-y-auto">
+                {warnings.filter(w => w).map((w, i) => (
+                  <div key={i} className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 break-words">
+                    {String(w).includes("❌") ? String(w) : `⚠️ ${String(w)}`}
+                  </div>
                 ))}
               </div>
             </div>

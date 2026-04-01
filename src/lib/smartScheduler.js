@@ -164,7 +164,7 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
   );
 
   if (clinicStaff.length === 0) {
-    return { shifts: [], warnings: ["No active staff assigned to this clinic."] };
+    return { shifts: [], warnings: [`❌ אין צוות פעיל משויך למרפאה "${clinic.name}"`] };
   }
 
   const activeDays = (clinic.active_days || [1, 2, 3, 4, 5]).map(normDay);
@@ -316,8 +316,9 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
             }
           }
           
-          const reasonStr = details.length > 0 ? ` — ${details.join(" | ")}` : "";
-          warnings.push(`❌ "${shiftType.name}" ביום ${format(date, "EEE, MMM d")} — אין ${roleLabel} זמין${reasonStr}`);
+          const reasonStr = details.length > 0 ? ` — ${details.join(" | ")}` : " (נתוני עובד לא ברורים)";
+          const warningMsg = `❌ "${shiftType.name}" ביום ${format(date, "EEE, MMM d")} — אין ${roleLabel} זמין${reasonStr}`;
+          warnings.push(warningMsg);
           continue;
         }
 
