@@ -64,7 +64,19 @@ export default function ClinicFormDialog({ open, onOpenChange, onSave, clinic })
 
   const addShiftType = () => setForm((p) => ({
     ...p,
-    shift_types: [...p.shift_types, { id: generateId(), name: "", start_time: "08:00", end_time: "16:00", is_hard: false, specific_day: null }],
+    shift_types: [...p.shift_types, { id: generateId(), name: "", start_time: "08:00", end_time: "16:00", is_hard: false, specific_days: [] }],
+  }));
+
+  const toggleShiftDay = (idx, day) => setForm((p) => ({
+    ...p,
+    shift_types: p.shift_types.map((st, i) => {
+      if (i !== idx) return st;
+      const days = st.specific_days || [];
+      return {
+        ...st,
+        specific_days: days.includes(day) ? days.filter((d) => d !== day) : [...days, day].sort((a, b) => a - b),
+      };
+    }),
   }));
 
   const updateShiftType = (idx, field, value) => setForm((p) => ({
@@ -225,20 +237,28 @@ export default function ClinicFormDialog({ open, onOpenChange, onSave, clinic })
                       <Input type="time" className="h-8 text-sm" value={st.end_time} onChange={(e) => updateShiftType(idx, "end_time", e.target.value)} />
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-[10px] text-muted-foreground uppercase tracking-wide">יום ספציפי (אופציונלי)</Label>
-                    <Select
-                      value={st.specific_day != null ? String(st.specific_day) : "all"}
-                      onValueChange={(v) => updateShiftType(idx, "specific_day", v === "all" ? null : parseInt(v))}
-                    >
-                      <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">כל הימים</SelectItem>
-                        {DAYS.map((day, i) => (
-                          <SelectItem key={i} value={String(i)}>{day}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                      ימים ספציפיים (ריק = כל הימים)
+                    </Label>
+                    <div className="flex gap-1 flex-wrap">
+                      {DAYS.map((day, i) => {
+                        const selected = (st.specific_days || []).includes(i);
+                        return (
+                          <button
+                            key={i} type="button"
+                            onClick={() => toggleShiftDay(idx, i)}
+                            className={`px-2 py-1 rounded-md text-xs font-medium border transition-colors ${
+                              selected
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-background text-muted-foreground border-input hover:border-primary/50"
+                            }`}
+                          >
+                            {day}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               ))}
