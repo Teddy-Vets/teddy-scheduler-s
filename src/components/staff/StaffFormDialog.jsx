@@ -30,7 +30,7 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
     return {
       name: "", staff_role: "veterinarian", email: "", phone: "",
       hourly_rate: 0, assigned_clinic_ids: [], regular_days_off: [],
-      preferred_shift_types: [], absences: [], status: "active",
+      preferred_shift_types: {}, absences: [], status: "active",
     };
   }
 
@@ -46,7 +46,7 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
         hourly_rate: member.hourly_rate || 0,
         assigned_clinic_ids: member.assigned_clinic_ids || [],
         regular_days_off: (member.regular_days_off || []).map(Number),
-        preferred_shift_types: member.preferred_shift_types || [],
+        preferred_shift_types: (Array.isArray(member.preferred_shift_types) && member.preferred_shift_types.length === 0) || !member.preferred_shift_types ? {} : member.preferred_shift_types,
         absences: member.absences || [],
         status: member.status || "active",
       });
