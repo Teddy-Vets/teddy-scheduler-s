@@ -180,89 +180,133 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
     const isFriday = dayOfWeek === 5;
 
     for (const shiftType of clinic.shift_types) {
-      // Skip if already assigned for this slot
-      const alreadyExists = existingShifts.some(
-        (s) => s.date === dateStr && s.clinic_id === clinic.id && s.shift_type_id === shiftType.id && s.status !== "cancelled"
-      );
-      if (alreadyExists) continue;
-      const alreadyGenerated = newShifts.some(
-        (s) => s.date === dateStr && s.shift_type_id === shiftType.id
-      );
-      if (alreadyGenerated) continue;
-
-      // Current pool of all shifts (for this clinic) for eligibility checks
-      const allShiftsPool = [
-        ...existingShifts.filter((s) => s.clinic_id === clinic.id),
-        ...newShifts,
-      ];
-      const weekShiftsPool = allShiftsPool.filter((s) => s.date >= weekStartStr && s.date <= weekEndStr);
-      const monthShiftsPool = allShiftsPool.filter((s) => s.date.startsWith(monthStr));
-
-      // Also consider ALL existing shifts (not just clinic) for rest-hours & consecutive checks
-      const globalPool = [...existingShifts, ...newShifts];
-
-      const eligible = clinicStaff.filter((member) => {
-        // 1. Regular day off
-        const regDaysOff = (member.regular_days_off || []).map(normDay);
-        if (regDaysOff.includes(dayOfWeek)) return false;
-
-        // 2. Absence
-        if (isAbsent(member, dateStr)) return false;
-
-        // 3. Already has a shift that day
-        const busyToday = globalPool.some(
-          (s) => s.staff_id === member.id && s.date === dateStr && s.status !== "cancelled"
-        );
-        if (busyToday) return false;
-
-        // 4. Max shifts per week
-        const memberWeekCount = weekShiftsPool.filter((s) => s.staff_id === member.id).length;
-        if (memberWeekCount >= maxShiftsPerWeek) return false;
-
-        // 5. Max consecutive work days
-        const consec = consecutiveWorkDaysBefore(member.id, dateStr, globalPool);
-        if (consec >= maxConsecutiveDays) return false;
-
-        // 6. Min rest hours
-        if (minRestHours > 0 && violatesRestHours(member, dateStr, shiftType, globalPool, minRestHours)) return false;
-
-        // 7. Max Fridays per month
-        if (isFriday) {
-          const fridayCount = fridaysThisMonth(member.id, dateStr, [...existingShifts, ...newShifts]);
-          if (fridayCount >= maxFridaysPerMonth) return false;
+      // Build required slots per role from required_staff
+      const requiredStaff = shiftType.required_staff || {};
+      const roleSlots = [];
+      const roleOrder = ["veterinarian", "technician", "receptionist"];
+      for (const role of roleOrder) {
+        const count = parseInt(requiredStaff[role]) || 0;
+        for (let i = 0; i < count; i++) {
+          roleSlots.push(role);
         }
-
-        return true;
-      });
-
-      if (eligible.length === 0) {
-        warnings.push(`No eligible staff for "${shiftType.name}" on ${format(date, "EEE, MMM d")}`);
-        continue;
+      }
+      // Fallback: if no required_staff configured, assign one person (any role)
+      if (roleSlots.length === 0) {
+        roleSlots.push(null);
       }
 
-      // Score candidates
-      eligible.sort(
-        (a, b) =>
-          scoreCandidate(a, shiftType, globalPool, weekShiftsPool, monthShiftsPool) -
-          scoreCandidate(b, shiftType, globalPool, weekShiftsPool, monthShiftsPool)
-      );
+      // Count how many of each role already exist for this shift type on this day
+      const existingForSlot = (shifts) =>
+        shifts.filter(
+          (s) => s.date === dateStr && s.clinic_id === clinic.id &&
+                 s.shift_type_id === shiftType.id && s.status !== "cancelled"
+        );
 
-      const candidate = eligible[0];
+      const alreadyExisting = existingForSlot(existingShifts);
+      const alreadyGenerated = existingForSlot(newShifts);
 
-      newShifts.push({
-        date: dateStr,
-        shift_type_id: shiftType.id,
-        shift_type_name: shiftType.name,
-        staff_id: candidate.id,
-        staff_name: candidate.name,
-        clinic_id: clinic.id,
-        clinic_name: clinic.name,
-        status: "planned",
-        start_time: shiftType.start_time,
-        end_time: shiftType.end_time,
-        is_hard_shift: shiftType.is_hard || false,
-        generated_by_scheduler: true,
-      });
+      // Count already filled per role
+      const filledPerRole = {};
+      for (const s of [...alreadyExisting, ...alreadyGenerated]) {
+        const r = s.staff_role || null;
+        filledPerRole[r] = (filledPerRole[r] || 0) + 1;
+      }
+
+      // Determine which role slots still need to be filled
+      const pendingSlots = [];
+      const pendingCount = {};
+      for (const role of roleSlots) {
+        pendingCount[role] = (pendingCount[role] || 0) + 1;
+      }
+      for (const [role, needed] of Object.entries(pendingCount)) {
+        const filled = filledPerRole[role] || 0;
+        const remaining = needed - filled;
+        for (let i = 0; i < remaining; i++) {
+          pendingSlots.push(role);
+        }
+      }
+
+      if (pendingSlots.length === 0) continue;
+
+      // Fill each pending slot
+      for (const targetRole of pendingSlots) {
+        // Rebuild pools fresh after each assignment
+        const allShiftsPool = [
+          ...existingShifts.filter((s) => s.clinic_id === clinic.id),
+          ...newShifts,
+        ];
+        const weekShiftsPool = allShiftsPool.filter((s) => s.date >= weekStartStr && s.date <= weekEndStr);
+        const monthShiftsPool = allShiftsPool.filter((s) => s.date.startsWith(monthStr));
+        const globalPool = [...existingShifts, ...newShifts];
+
+        const eligible = clinicStaff.filter((member) => {
+          // Role filter (only if a specific role is required)
+          if (targetRole && member.staff_role !== targetRole) return false;
+
+          // 1. Regular day off
+          const regDaysOff = (member.regular_days_off || []).map(normDay);
+          if (regDaysOff.includes(dayOfWeek)) return false;
+
+          // 2. Absence
+          if (isAbsent(member, dateStr)) return false;
+
+          // 3. Already has a shift that day
+          const busyToday = globalPool.some(
+            (s) => s.staff_id === member.id && s.date === dateStr && s.status !== "cancelled"
+          );
+          if (busyToday) return false;
+
+          // 4. Max shifts per week
+          const memberWeekCount = weekShiftsPool.filter((s) => s.staff_id === member.id).length;
+          if (memberWeekCount >= maxShiftsPerWeek) return false;
+
+          // 5. Max consecutive work days
+          const consec = consecutiveWorkDaysBefore(member.id, dateStr, globalPool);
+          if (consec >= maxConsecutiveDays) return false;
+
+          // 6. Min rest hours
+          if (minRestHours > 0 && violatesRestHours(member, dateStr, shiftType, globalPool, minRestHours)) return false;
+
+          // 7. Max Fridays per month
+          if (isFriday) {
+            const fridayCount = fridaysThisMonth(member.id, dateStr, globalPool);
+            if (fridayCount >= maxFridaysPerMonth) return false;
+          }
+
+          return true;
+        });
+
+        if (eligible.length === 0) {
+          const roleLabel = targetRole || "any";
+          warnings.push(`No eligible ${roleLabel} for "${shiftType.name}" on ${format(date, "EEE, MMM d")}`);
+          continue;
+        }
+
+        // Score candidates
+        eligible.sort(
+          (a, b) =>
+            scoreCandidate(a, shiftType, globalPool, weekShiftsPool, monthShiftsPool) -
+            scoreCandidate(b, shiftType, globalPool, weekShiftsPool, monthShiftsPool)
+        );
+
+        const candidate = eligible[0];
+
+        newShifts.push({
+          date: dateStr,
+          shift_type_id: shiftType.id,
+          shift_type_name: shiftType.name,
+          staff_id: candidate.id,
+          staff_name: candidate.name,
+          staff_role: candidate.staff_role,
+          clinic_id: clinic.id,
+          clinic_name: clinic.name,
+          status: "planned",
+          start_time: shiftType.start_time,
+          end_time: shiftType.end_time,
+          is_hard_shift: shiftType.is_hard || false,
+          generated_by_scheduler: true,
+        });
+      }
     }
   }
 
