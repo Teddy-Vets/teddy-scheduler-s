@@ -64,7 +64,7 @@ export default function ClinicFormDialog({ open, onOpenChange, onSave, clinic })
 
   const addShiftType = () => setForm((p) => ({
     ...p,
-    shift_types: [...p.shift_types, { id: generateId(), name: "", start_time: "08:00", end_time: "16:00", is_hard: false, specific_days: [] }],
+    shift_types: [...p.shift_types, { id: generateId(), name: "", start_time: "08:00", end_time: "16:00", is_hard: false, specific_days: [], required_staff: { veterinarian: 1, technician: 1, receptionist: 0 } }],
   }));
 
   const toggleShiftDay = (idx, day) => setForm((p) => ({
@@ -237,6 +237,29 @@ export default function ClinicFormDialog({ open, onOpenChange, onSave, clinic })
                       <Input type="time" className="h-8 text-sm" value={st.end_time} onChange={(e) => updateShiftType(idx, "end_time", e.target.value)} />
                     </div>
                   </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] text-muted-foreground uppercase tracking-wide">כמות צוות נדרשת</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { key: "veterinarian", label: "וטרינרים" },
+                        { key: "technician", label: "טכנאים" },
+                        { key: "receptionist", label: "קבלה" },
+                      ].map(({ key, label }) => (
+                        <div key={key} className="space-y-1">
+                          <Label className="text-[10px] text-muted-foreground">{label}</Label>
+                          <Input
+                            type="number" min={0} className="h-8 text-sm"
+                            value={(st.required_staff || {})[key] ?? 0}
+                            onChange={(e) => updateShiftType(idx, "required_staff", {
+                              ...(st.required_staff || {}),
+                              [key]: parseInt(e.target.value) || 0,
+                            })}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="space-y-1.5">
                     <Label className="text-[10px] text-muted-foreground uppercase tracking-wide">
                       ימים ספציפיים (ריק = כל הימים)
