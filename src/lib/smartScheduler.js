@@ -253,7 +253,7 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
            // Role filter (only if a specific role is required)
            if (targetRole !== null && targetRole !== undefined && member.staff_role !== targetRole) return false;
 
-           // 1. Regular day off
+           // 1. Regular day off (same every week: 0=Sunday, 6=Saturday)
            const regDaysOff = (member.regular_days_off || []).map(normDay);
            if (regDaysOff.includes(dayOfWeek)) return false;
 
@@ -287,6 +287,7 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
            }
 
            // 8. Shift type availability: if member has day preferences, they must match this shift
+           // NOTE: Preferences are recurring every week (same day of week = same preference)
            const dayPrefs = member.preferred_shifts_by_day;
            if (dayPrefs && dayPrefs[dayOfWeek]) {
              if (dayPrefs[dayOfWeek] !== shiftType.id) return false;
