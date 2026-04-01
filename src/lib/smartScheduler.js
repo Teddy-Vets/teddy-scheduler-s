@@ -246,7 +246,7 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
 
         const eligible = clinicStaff.filter((member) => {
           // Role filter (only if a specific role is required)
-          if (targetRole && member.staff_role !== targetRole) return false;
+          if (targetRole !== null && targetRole !== undefined && member.staff_role !== targetRole) return false;
 
           // 1. Regular day off
           const regDaysOff = (member.regular_days_off || []).map(normDay);
