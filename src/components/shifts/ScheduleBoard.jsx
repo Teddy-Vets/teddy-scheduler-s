@@ -6,9 +6,8 @@ import { Plus, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-// Shift type colour palette – keyed by a few heuristics:
-// morning → blue, afternoon → orange, evening → amber, default → teal
-export function getShiftColor(shiftTypeName = "", isHard = false) {
+// Shift type colour palette – keyed by shift name
+export function getShiftColor(shiftTypeName = "") {
   const n = shiftTypeName.toLowerCase();
   if (n.includes("morning") || n.includes("בוקר") || n.includes("early"))
     return { bg: "bg-blue-100 border-blue-300 text-blue-800", dot: "bg-blue-500", label: "בוקר" };
@@ -16,9 +15,7 @@ export function getShiftColor(shiftTypeName = "", isHard = false) {
     return { bg: "bg-orange-100 border-orange-300 text-orange-800", dot: "bg-orange-500", label: "צהריים" };
   if (n.includes("late") || n.includes("evening") || n.includes("ערב"))
     return { bg: "bg-amber-100 border-amber-300 text-amber-800", dot: "bg-amber-500", label: "ערב" };
-  return isHard
-    ? { bg: "bg-purple-100 border-purple-300 text-purple-800", dot: "bg-purple-500", label: "קשה" }
-    : { bg: "bg-teal-100 border-teal-300 text-teal-800", dot: "bg-teal-500", label: "משמרת" };
+  return { bg: "bg-teal-100 border-teal-300 text-teal-800", dot: "bg-teal-500", label: "משמרת" };
 }
 
 const DAYS_HE = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
@@ -35,8 +32,8 @@ function ShiftCell({ shift, onCellClick, dateStr, staffMember }) {
     );
   }
 
-  const color = getShiftColor(shift.shift_type_name, shift.is_hard_shift);
-  const isGenerated = shift.generated_by_scheduler;
+  const color = getShiftColor(shift.shift_type_name);
+    const isGenerated = shift.generated_by_scheduler;
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -58,15 +55,11 @@ function ShiftCell({ shift, onCellClick, dateStr, staffMember }) {
             <p className="text-[10px] opacity-70 leading-tight">
               {shift.start_time}–{shift.end_time}
             </p>
-            {shift.status === "cancelled" && (
-            <span className="text-[9px] font-bold opacity-60 line-through">בוטל</span>
-            )}
           </button>
         </TooltipTrigger>
         <TooltipContent side="top" className="text-xs">
           <p className="font-semibold">{shift.shift_type_name}</p>
           <p className="text-muted-foreground">{shift.start_time} – {shift.end_time}</p>
-          {shift.is_hard_shift && <p className="text-amber-500">⚡ משמרת קשה</p>}
           <p>{shift.status === "planned" ? "מתוכנן" : shift.status === "completed" ? "הושלם" : "בוטל"}</p>
         </TooltipContent>
       </Tooltip>

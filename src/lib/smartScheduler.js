@@ -12,9 +12,8 @@
  * 8. Max Fridays per month (maxFridaysPerMonth) — only on Fridays
  *
  * Scoring / priority (lower = more preferred):
- * - Preferred shift type gets a big bonus
- * - Fairness for hard shifts: staff with fewer hard shifts this month get priority
- * - General load balancing: fewer weekly shifts = preferred
+  * - Preferred shift type gets a big bonus
+  * - General load balancing: fewer weekly shifts = preferred
  */
 
 import { format, addDays, startOfWeek, differenceInHours, parse, startOfMonth, endOfMonth } from "date-fns";
@@ -123,12 +122,6 @@ function scoreCandidate(member, shiftType, allShifts, weekShifts, monthShifts, d
   // Load: fewer shifts this week → preferred
   const weekCount = weekShifts.filter((s) => s.staff_id === member.id).length;
   score += weekCount * 10;
-
-  // Fairness for hard shifts: for a hard shift, staff with fewer hard shifts this month get priority
-  if (shiftType.is_hard) {
-    const hardThisMonth = monthShifts.filter((s) => s.staff_id === member.id && s.is_hard_shift).length;
-    score += hardThisMonth * 20;
-  }
 
   // Preference: check day-based preferences
   const dayPrefs = member.preferred_shifts_by_day;
@@ -354,9 +347,8 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
           status: "planned",
           start_time: shiftType.start_time,
           end_time: shiftType.end_time,
-          is_hard_shift: shiftType.is_hard || false,
           generated_by_scheduler: true,
-        });
+          });
       }
     }
   }

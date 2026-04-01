@@ -84,19 +84,15 @@ export default function SmartSchedulerDialog({
 
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
           {/* Summary */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="p-3 rounded-xl bg-primary/5 border border-primary/20 text-center">
-              <p className="text-2xl font-bold text-primary">{editableShifts.length}</p>
-              <p className="text-xs text-muted-foreground">משמרות ליצירה</p>
-            </div>
-            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-center">
-              <p className="text-2xl font-bold text-amber-600">{editableShifts.filter((s) => s.is_hard_shift).length}</p>
-              <p className="text-xs text-muted-foreground">משמרות קשות ⚡</p>
-            </div>
-            <div className="p-3 rounded-xl bg-muted/50 border text-center">
-              <p className="text-2xl font-bold">{warnings.length}</p>
-              <p className="text-xs text-muted-foreground">אזהרות</p>
-            </div>
+          <div className="grid grid-cols-2 gap-3">
+          <div className="p-3 rounded-xl bg-primary/5 border border-primary/20 text-center">
+            <p className="text-2xl font-bold text-primary">{editableShifts.length}</p>
+            <p className="text-xs text-muted-foreground">משמרות ליצירה</p>
+          </div>
+          <div className="p-3 rounded-xl bg-muted/50 border text-center">
+            <p className="text-2xl font-bold">{warnings.length}</p>
+            <p className="text-xs text-muted-foreground">אזהרות</p>
+          </div>
           </div>
 
           {/* Compliance badges */}
@@ -144,15 +140,14 @@ export default function SmartSchedulerDialog({
 
                       return (
                         <div key={idx} className={`rounded-xl border transition-all ${isEditing ? "ring-2 ring-primary/30 bg-card shadow-sm" : "bg-muted/30"}`}>
-                          {!isEditing && (
-                            <div className="flex items-center gap-3 px-3 py-2.5">
-                              <span className={`px-2 py-0.5 rounded-md border text-[11px] font-semibold ${color.bg}`}>{sh.shift_type_name}</span>
-                              <span className="text-sm font-medium flex-1">{sh.staff_name}</span>
-                              <span className="text-xs text-muted-foreground">{sh.start_time}–{sh.end_time}</span>
-                              {sh.is_hard_shift && <span className="text-amber-500 text-xs">⚡</span>}
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingIdx(idx)}>
-                                <Pencil className="w-3.5 h-3.5" />
-                              </Button>
+                        {!isEditing && (
+                          <div className="flex items-center gap-3 px-3 py-2.5">
+                            <span className={`px-2 py-0.5 rounded-md border text-[11px] font-semibold ${color.bg}`}>{sh.shift_type_name}</span>
+                            <span className="text-sm font-medium flex-1">{sh.staff_name}</span>
+                            <span className="text-xs text-muted-foreground">{sh.start_time}–{sh.end_time}</span>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingIdx(idx)}>
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
                               <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeShift(idx)}>
                                 <Trash2 className="w-3.5 h-3.5" />
                               </Button>
@@ -167,7 +162,7 @@ export default function SmartSchedulerDialog({
                                     <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                                     <SelectContent>
                                       {shiftTypes.map((st) => (
-                                        <SelectItem key={st.id} value={st.id} className="text-xs">{st.name} {st.is_hard ? "⚡" : ""}</SelectItem>
+                                        <SelectItem key={st.id} value={st.id} className="text-xs">{st.name}</SelectItem>
                                       ))}
                                     </SelectContent>
                                   </Select>

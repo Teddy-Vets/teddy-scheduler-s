@@ -59,11 +59,6 @@
       "type": "boolean",
       "default": false,
       "description": "Whether this shift was auto-generated"
-    },
-    "is_hard_shift": {
-      "type": "boolean",
-      "default": false,
-      "description": "Whether this is a hard shift (night/weekend)"
     }
   },
   "required": [
