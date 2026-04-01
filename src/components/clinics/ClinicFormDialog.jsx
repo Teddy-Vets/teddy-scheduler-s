@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -30,8 +30,11 @@ export default function ClinicFormDialog({ open, onOpenChange, onSave, clinic })
   const [form, setForm] = useState(defaultForm());
   const [activeTab, setActiveTab] = useState("details");
 
+  const prevOpenRef = useRef(false);
   useEffect(() => {
-    if (!open) return;
+    const justOpened = open && !prevOpenRef.current;
+    prevOpenRef.current = open;
+    if (!justOpened) return;
     setActiveTab("details");
     if (clinic) {
       setForm({
