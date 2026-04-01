@@ -173,7 +173,7 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
   for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
     const date = addDays(weekStart, dayIdx);
     const dateStr = format(date, "yyyy-MM-dd");
-    const dayOfWeek = date.getDay();
+    const dayOfWeek = date.getDay(); // 0=Sun … 6=Sat
 
     if (!activeDays.includes(dayOfWeek)) continue;
 
@@ -261,8 +261,10 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
           );
           if (busyToday) return false;
 
-          // 4. Max shifts per week
-          const memberWeekCount = weekShiftsPool.filter((s) => s.staff_id === member.id).length;
+          // 4. Max shifts per week (count across ALL clinics)
+          const memberWeekCount = globalPool.filter(
+            (s) => s.staff_id === member.id && s.date >= weekStartStr && s.date <= weekEndStr && s.status !== "cancelled"
+          ).length;
           if (memberWeekCount >= maxShiftsPerWeek) return false;
 
           // 5. Max consecutive work days
@@ -283,7 +285,22 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
 
         if (eligible.length === 0) {
           const roleLabel = targetRole || "any";
-          warnings.push(`No eligible ${roleLabel} for "${shiftType.name}" on ${format(date, "EEE, MMM d")}`);
+          // Diagnose why all staff were ineligible
+          const reasons = [];
+          const candidatePool = clinicStaff.filter((m) => targetRole === null || targetRole === undefined || m.staff_role === targetRole);
+          const dayOff = candidatePool.filter((m) => (m.regular_days_off || []).map(normDay).includes(dayOfWeek)).length;
+          const absent = candidatePool.filter((m) => isAbsent(m, dateStr)).length;
+          const busy = candidatePool.filter((m) => [...existingShifts, ...newShifts].some((s) => s.staff_id === m.id && s.date === dateStr && s.status !== "cancelled")).length;
+          const maxWeek = candidatePool.filter((m) => {
+            const cnt = [...existingShifts, ...newShifts].filter((s) => s.staff_id === m.id && s.date >= weekStartStr && s.date <= weekEndStr && s.status !== "cancelled").length;
+            return cnt >= maxShiftsPerWeek;
+          }).length;
+          if (dayOff) reasons.push(`${dayOff} יום חופש`);
+          if (absent) reasons.push(`${absent} בהיעדרות`);
+          if (busy) reasons.push(`${busy} כבר משובצים היום`);
+          if (maxWeek) reasons.push(`${maxWeek} הגיעו למקסימום משמרות שבועי`);
+          const reasonStr = reasons.length ? ` (${reasons.join(", ")})` : "";
+          warnings.push(`No eligible ${roleLabel} for "${shiftType.name}" on ${format(date, "EEE, MMM d")}${reasonStr}`);
           continue;
         }
 
