@@ -190,6 +190,11 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
         if (!shiftType.specific_days.map(normDay).includes(dayOfWeek)) continue;
       }
 
+      // Special handling for Friday morning shift - only on Fridays (day 5)
+      if (shiftType.name && shiftType.name.includes("שישי")) {
+        if (dayOfWeek !== 5) continue;
+      }
+
       // Build required slots per role from required_staff
       const requiredStaff = shiftType.required_staff || {};
       const roleSlots = [];
@@ -318,6 +323,11 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
               const fridayLimit = m.max_fridays_per_month != null ? m.max_fridays_per_month : maxFridaysPerMonth;
               const fridayCount = fridaysThisMonth(m.id, dateStr, globalPool);
               if (fridayCount >= fridayLimit) issues.push(`שישי (${fridayCount}/${fridayLimit})`);
+            }
+            // Check shift preferences - if has preference for this day and it doesn't match this shift type
+            const dayPrefs = m.preferred_shifts_by_day;
+            if (dayPrefs && dayPrefs[dayOfWeek] && dayPrefs[dayOfWeek] !== shiftType.id) {
+              issues.push("העדפה למשמרת אחרת");
             }
             if (issues.length > 0) details.push(`${m.name}: ${issues.join(", ")}`);
           }
