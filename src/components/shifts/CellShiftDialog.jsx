@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import { he } from "date-fns/locale";
 import { getShiftColor } from "./ScheduleBoard";
 
 export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, staffMember, clinics, onSave, onDelete }) {
@@ -25,7 +26,6 @@ export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, st
         end_time: shift.end_time || "",
       });
     } else {
-      // Pre-select the first clinic the staff member belongs to
       const defaultClinic = clinics.find((c) => staffMember?.assigned_clinic_ids?.includes(c.id));
       setForm({ clinic_id: defaultClinic?.id || "", shift_type_id: "", status: "planned", start_time: "", end_time: "" });
     }
@@ -59,25 +59,23 @@ export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, st
 
   const selectedType = shiftTypes.find((t) => t.id === form.shift_type_id);
   const color = selectedType ? getShiftColor(selectedType.name, selectedType.is_hard) : null;
-
-  const formattedDate = dateStr ? format(new Date(dateStr + "T00:00:00"), "EEEE, MMMM d") : "";
+  const formattedDate = dateStr ? format(new Date(dateStr + "T00:00:00"), "EEEE, d בMMMM", { locale: he }) : "";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle className="text-base">
-            {shift ? "Edit Shift" : "Assign Shift"}
+            {shift ? "עריכת משמרת" : "שיבוץ משמרת"}
           </DialogTitle>
           <p className="text-sm text-muted-foreground">{staffMember?.name} · {formattedDate}</p>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Clinic selector */}
           <div className="space-y-2">
-            <Label>Clinic</Label>
+            <Label>מרפאה</Label>
             <Select value={form.clinic_id} onValueChange={(v) => setForm({ ...form, clinic_id: v, shift_type_id: "", start_time: "", end_time: "" })}>
-              <SelectTrigger><SelectValue placeholder="Select clinic" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="בחר מרפאה" /></SelectTrigger>
               <SelectContent>
                 {clinics
                   .filter((c) => staffMember?.assigned_clinic_ids?.includes(c.id))
@@ -86,12 +84,11 @@ export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, st
             </Select>
           </div>
 
-          {/* Shift type */}
           {shiftTypes.length > 0 && (
             <div className="space-y-2">
-              <Label>Shift Type</Label>
+              <Label>סוג משמרת</Label>
               <Select value={form.shift_type_id} onValueChange={handleShiftTypeChange}>
-                <SelectTrigger><SelectValue placeholder="Select shift type" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="בחר סוג משמרת" /></SelectTrigger>
                 <SelectContent>
                   {shiftTypes.map((st) => {
                     const c = getShiftColor(st.name, st.is_hard);
@@ -100,7 +97,7 @@ export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, st
                         <span className="flex items-center gap-2">
                           <span className={`w-2 h-2 rounded-full ${c.dot}`} />
                           {st.name} · {st.start_time}–{st.end_time}
-                          {st.is_hard && <span className="text-amber-500 ml-1">⚡</span>}
+                          {st.is_hard && <span className="text-amber-500">⚡</span>}
                         </span>
                       </SelectItem>
                     );
@@ -110,7 +107,6 @@ export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, st
             </div>
           )}
 
-          {/* Preview */}
           {color && selectedType && (
             <div className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border ${color.bg}`}>
               <span className={`w-2.5 h-2.5 rounded-full ${color.dot}`} />
@@ -118,32 +114,30 @@ export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, st
                 <p className="text-sm font-semibold">{selectedType.name}</p>
                 <p className="text-xs opacity-70">{form.start_time} – {form.end_time}</p>
               </div>
-              {selectedType.is_hard && <Badge variant="secondary" className="text-[10px]">Hard ⚡</Badge>}
+              {selectedType.is_hard && <Badge variant="secondary" className="text-[10px]">קשה ⚡</Badge>}
             </div>
           )}
 
-          {/* Manual time override */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Start Time</Label>
+              <Label className="text-xs">שעת התחלה</Label>
               <Input type="time" value={form.start_time} onChange={(e) => setForm({ ...form, start_time: e.target.value })} />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">End Time</Label>
+              <Label className="text-xs">שעת סיום</Label>
               <Input type="time" value={form.end_time} onChange={(e) => setForm({ ...form, end_time: e.target.value })} />
             </div>
           </div>
 
-          {/* Status */}
           {shift && (
             <div className="space-y-2">
-              <Label>Status</Label>
+              <Label>סטטוס</Label>
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="planned">Planned</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="planned">מתוכנן</SelectItem>
+                  <SelectItem value="completed">הושלם</SelectItem>
+                  <SelectItem value="cancelled">בוטל</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -152,13 +146,13 @@ export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, st
 
         <DialogFooter className="gap-2 mt-2">
           {shift && (
-            <Button variant="destructive" size="sm" onClick={() => onDelete(shift.id)} className="mr-auto gap-1">
-              <Trash2 className="w-3.5 h-3.5" /> Remove
+            <Button variant="destructive" size="sm" onClick={() => onDelete(shift.id)} className="ml-auto gap-1">
+              <Trash2 className="w-3.5 h-3.5" /> מחק
             </Button>
           )}
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>ביטול</Button>
           <Button size="sm" onClick={handleSave} disabled={!form.clinic_id || !form.start_time}>
-            {shift ? "Update" : "Assign"}
+            {shift ? "עדכן" : "שבץ"}
           </Button>
         </DialogFooter>
       </DialogContent>

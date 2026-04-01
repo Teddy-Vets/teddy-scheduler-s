@@ -4,8 +4,9 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, ChevronLeft, ChevronRight, Zap, Calendar, LayoutGrid } from "lucide-react";
+import { Plus, ChevronRight, ChevronLeft, Zap, Calendar, LayoutGrid } from "lucide-react";
 import { format, startOfWeek, addDays } from "date-fns";
+import { he } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
 import { Toaster } from "@/components/ui/toaster";
@@ -20,21 +21,13 @@ import { runSmartScheduler } from "../lib/smartScheduler";
 export default function Shifts() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [activeTab, setActiveTab] = useState("board");
-
-  // Classic calendar dialog
   const [calDialogOpen, setCalDialogOpen] = useState(false);
   const [selectedShift, setSelectedShift] = useState(null);
-
-  // Board cell dialog
   const [cellDialogOpen, setCellDialogOpen] = useState(false);
   const [cellShift, setCellShift] = useState(null);
   const [cellDate, setCellDate] = useState(null);
   const [cellStaff, setCellStaff] = useState(null);
-
-  // Clinic filter
   const [selectedClinicId, setSelectedClinicId] = useState("all");
-
-  // Smart scheduler
   const [isScheduling, setIsScheduling] = useState(false);
   const [schedulerResult, setSchedulerResult] = useState(null);
   const [schedulerDialogOpen, setSchedulerDialogOpen] = useState(false);
@@ -77,7 +70,6 @@ export default function Shifts() {
     },
   });
 
-  // Board cell click
   const handleCellClick = (shift, dateStr, staffMember) => {
     setCellShift(shift);
     setCellDate(dateStr);
@@ -85,7 +77,6 @@ export default function Shifts() {
     setCellDialogOpen(true);
   };
 
-  // Save from cell dialog
   const handleCellSave = (data) => {
     if (cellShift) {
       updateMutation.mutate({ id: cellShift.id, data });
@@ -95,7 +86,6 @@ export default function Shifts() {
     }
   };
 
-  // Save from classic calendar dialog
   const handleCalSave = (data) => {
     if (selectedShift) {
       updateMutation.mutate({ id: selectedShift.id, data });
@@ -105,17 +95,14 @@ export default function Shifts() {
     }
   };
 
-  // Smart scheduler
   const handleRunScheduler = () => {
     if (selectedClinicId === "all") {
-      toast({ title: "Select a clinic first", description: "Choose a specific clinic to run the smart scheduler.", variant: "destructive" });
+      toast({ title: "יש לבחור מרפאה תחילה", description: "בחר מרפאה ספציפית כדי להריץ את השיבוץ החכם.", variant: "destructive" });
       return;
     }
     const clinic = clinics.find((c) => c.id === selectedClinicId);
     if (!clinic) return;
-
     setIsScheduling(true);
-    // Run in next tick so UI can update
     setTimeout(() => {
       const result = runSmartScheduler({ clinic, allStaff: staff, existingShifts: shifts, weekOffset });
       setSchedulerResult(result);
@@ -133,7 +120,7 @@ export default function Shifts() {
     queryClient.invalidateQueries({ queryKey: ["shifts"] });
     setIsCreatingShifts(false);
     setSchedulerDialogOpen(false);
-    toast({ title: `${editedShifts.length} shifts scheduled`, description: "The smart scheduler has applied your new shifts." });
+    toast({ title: `${editedShifts.length} משמרות שובצו`, description: "השיבוץ החכם יישם את המשמרות החדשות בהצלחה." });
   };
 
   const filteredShifts = selectedClinicId === "all"
@@ -141,7 +128,7 @@ export default function Shifts() {
     : shifts.filter((s) => s.clinic_id === selectedClinicId);
 
   const weekStart = startOfWeek(addDays(new Date(), weekOffset * 7), { weekStartsOn: 0 });
-  const weekLabel = `${format(weekStart, "MMM d")} – ${format(addDays(weekStart, 6), "MMM d, yyyy")}`;
+  const weekLabel = `${format(weekStart, "d MMM", { locale: he })} – ${format(addDays(weekStart, 6), "d MMM yyyy", { locale: he })}`;
 
   if (loadingShifts) {
     return (
@@ -159,24 +146,22 @@ export default function Shifts() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Shift Schedule</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage and plan staff shifts across clinics</p>
+          <h1 className="text-2xl font-bold tracking-tight">לוח שיבוץ</h1>
+          <p className="text-sm text-muted-foreground mt-1">ניהול ותכנון משמרות הצוות בין המרפאות</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Clinic filter */}
           <Select value={selectedClinicId} onValueChange={setSelectedClinicId}>
             <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="All Clinics" />
+              <SelectValue placeholder="כל המרפאות" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Clinics</SelectItem>
+              <SelectItem value="all">כל המרפאות</SelectItem>
               {clinics.map((c) => (
                 <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          {/* Smart scheduler – only on board tab */}
           {activeTab === "board" && (
             <Button
               onClick={handleRunScheduler}
@@ -185,33 +170,34 @@ export default function Shifts() {
               className="gap-2 border-accent/50 text-accent hover:bg-accent hover:text-accent-foreground"
             >
               {isScheduling
-                ? <><div className="w-3.5 h-3.5 border-2 border-accent/30 border-t-accent rounded-full animate-spin" /> Running…</>
-                : <><Zap className="w-4 h-4" /> Run Smart Scheduler</>
+                ? <><div className="w-3.5 h-3.5 border-2 border-accent/30 border-t-accent rounded-full animate-spin" /> מריץ…</>
+                : <><Zap className="w-4 h-4" /> שיבוץ חכם</>
               }
             </Button>
           )}
 
           <Button onClick={() => { setSelectedShift(null); setCalDialogOpen(true); }} className="gap-2">
-            <Plus className="w-4 h-4" /> New Shift
+            <Plus className="w-4 h-4" /> משמרת חדשה
           </Button>
         </div>
       </div>
 
       {/* Week nav */}
       <div className="flex items-center justify-between bg-card border border-border rounded-xl px-4 py-2">
-        <Button variant="ghost" size="icon" onClick={() => setWeekOffset((w) => w - 1)}>
-          <ChevronLeft className="w-5 h-5" />
+        {/* RTL: right arrow goes to previous week, left goes to next */}
+        <Button variant="ghost" size="icon" onClick={() => setWeekOffset((w) => w + 1)}>
+          <ChevronRight className="w-5 h-5" />
         </Button>
         <div className="text-center">
           <p className="text-sm font-semibold">{weekLabel}</p>
           {weekOffset !== 0 && (
             <button onClick={() => setWeekOffset(0)} className="text-xs text-primary hover:underline">
-              Back to this week
+              חזור לשבוע הנוכחי
             </button>
           )}
         </div>
-        <Button variant="ghost" size="icon" onClick={() => setWeekOffset((w) => w + 1)}>
-          <ChevronRight className="w-5 h-5" />
+        <Button variant="ghost" size="icon" onClick={() => setWeekOffset((w) => w - 1)}>
+          <ChevronLeft className="w-5 h-5" />
         </Button>
       </div>
 
@@ -219,14 +205,20 @@ export default function Shifts() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-2">
           <TabsTrigger value="board" className="gap-2">
-            <LayoutGrid className="w-4 h-4" /> Schedule Board
+            <LayoutGrid className="w-4 h-4" /> לוח שיבוץ
           </TabsTrigger>
           <TabsTrigger value="calendar" className="gap-2">
-            <Calendar className="w-4 h-4" /> Day Calendar
+            <Calendar className="w-4 h-4" /> לוח שנה
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="board">
+          {filteredShifts.length === 0 && !isScheduling && (
+            <div className="text-center py-16 text-muted-foreground border-2 border-dashed rounded-xl">
+              <p className="text-lg font-medium">אין משמרות מתוכננות</p>
+              <p className="text-sm mt-1">לחץ על <span className="font-semibold text-accent">שיבוץ חכם</span> כדי ליצור משמרות אוטומטית, או הוסף משמרת ידנית</p>
+            </div>
+          )}
           <ScheduleBoard
             shifts={filteredShifts}
             staff={staff}
@@ -248,7 +240,6 @@ export default function Shifts() {
         </TabsContent>
       </Tabs>
 
-      {/* Cell shift dialog (board) */}
       <CellShiftDialog
         open={cellDialogOpen}
         onOpenChange={setCellDialogOpen}
@@ -260,7 +251,6 @@ export default function Shifts() {
         onDelete={(id) => deleteMutation.mutate(id)}
       />
 
-      {/* Classic shift form dialog (calendar tab & New Shift button) */}
       <ShiftFormDialog
         open={calDialogOpen}
         onOpenChange={setCalDialogOpen}
@@ -271,7 +261,6 @@ export default function Shifts() {
         staff={staff}
       />
 
-      {/* Smart scheduler preview dialog */}
       <SmartSchedulerDialog
         open={schedulerDialogOpen}
         onOpenChange={setSchedulerDialogOpen}

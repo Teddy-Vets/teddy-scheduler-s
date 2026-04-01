@@ -6,8 +6,8 @@ import {
   Calendar,
   Users,
   Building2,
-  ChevronLeft,
   ChevronRight,
+  ChevronLeft,
   Stethoscope,
   LogOut,
 } from "lucide-react";
@@ -16,10 +16,10 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const navItems = [
-  { path: "/", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/shifts", label: "Shifts", icon: Calendar },
-  { path: "/staff", label: "Staff", icon: Users },
-  { path: "/clinics", label: "Clinics", icon: Building2 },
+  { path: "/", label: "דאשבורד", icon: LayoutDashboard },
+  { path: "/shifts", label: "לוח שיבוץ", icon: Calendar },
+  { path: "/staff", label: "צוות", icon: Users },
+  { path: "/clinics", label: "מרפאות", icon: Building2 },
 ];
 
 export default function Sidebar() {
@@ -35,7 +35,7 @@ export default function Sidebar() {
       <motion.aside
         animate={{ width: collapsed ? 72 : 256 }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="h-screen bg-sidebar text-sidebar-foreground flex flex-col border-r border-sidebar-border fixed left-0 top-0 z-40"
+        className="h-screen bg-sidebar text-sidebar-foreground flex flex-col border-l border-sidebar-border fixed right-0 top-0 z-40"
       >
         {/* Logo */}
         <div className="p-4 flex items-center gap-3 border-b border-sidebar-border min-h-[64px]">
@@ -93,7 +93,7 @@ export default function Sidebar() {
               return (
                 <Tooltip key={item.path}>
                   <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                  <TooltipContent side="right">{item.label}</TooltipContent>
+                  <TooltipContent side="left">{item.label}</TooltipContent>
                 </Tooltip>
               );
             }
@@ -113,10 +113,10 @@ export default function Sidebar() {
                 className="w-full justify-start gap-3 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent px-3"
               >
                 <LogOut className="w-5 h-5 flex-shrink-0" />
-                {!collapsed && <span className="text-sm">Sign Out</span>}
+                {!collapsed && <span className="text-sm">התנתק</span>}
               </Button>
             </TooltipTrigger>
-            {collapsed && <TooltipContent side="right">Sign Out</TooltipContent>}
+            {collapsed && <TooltipContent side="left">התנתק</TooltipContent>}
           </Tooltip>
 
           <Button
@@ -125,7 +125,7 @@ export default function Sidebar() {
             onClick={() => setCollapsed(!collapsed)}
             className="w-full h-8 text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent"
           >
-            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            {collapsed ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </Button>
         </div>
       </motion.aside>

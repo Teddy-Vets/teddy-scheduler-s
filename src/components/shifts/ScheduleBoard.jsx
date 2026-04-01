@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { format, startOfWeek, addDays, isSameDay } from "date-fns";
+import { he } from "date-fns/locale";
 import { motion } from "framer-motion";
 import { Plus, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -9,22 +10,22 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 // is_hard + night hours → purple, morning → blue, afternoon/evening → orange, late/overnight → purple, default → teal
 export function getShiftColor(shiftTypeName = "", isHard = false) {
   const n = shiftTypeName.toLowerCase();
-  if (n.includes("night") || n.includes("overnight"))
-    return { bg: "bg-purple-100 border-purple-300 text-purple-800", dot: "bg-purple-500", label: "Night" };
-  if (n.includes("morning") || n.includes("early") || n.includes("dawn"))
-    return { bg: "bg-blue-100 border-blue-300 text-blue-800", dot: "bg-blue-500", label: "Morning" };
-  if (n.includes("afternoon") || n.includes("mid") || n.includes("day"))
-    return { bg: "bg-orange-100 border-orange-300 text-orange-800", dot: "bg-orange-500", label: "Day" };
-  if (n.includes("late") || n.includes("evening"))
-    return { bg: "bg-amber-100 border-amber-300 text-amber-800", dot: "bg-amber-500", label: "Evening" };
-  if (n.includes("weekend"))
-    return { bg: "bg-rose-100 border-rose-300 text-rose-800", dot: "bg-rose-500", label: "Weekend" };
+  if (n.includes("night") || n.includes("לילה") || n.includes("overnight"))
+    return { bg: "bg-purple-100 border-purple-300 text-purple-800", dot: "bg-purple-500", label: "לילה" };
+  if (n.includes("morning") || n.includes("בוקר") || n.includes("early"))
+    return { bg: "bg-blue-100 border-blue-300 text-blue-800", dot: "bg-blue-500", label: "בוקר" };
+  if (n.includes("afternoon") || n.includes("צהריים") || n.includes("day") || n.includes("יום"))
+    return { bg: "bg-orange-100 border-orange-300 text-orange-800", dot: "bg-orange-500", label: "צהריים" };
+  if (n.includes("late") || n.includes("evening") || n.includes("ערב"))
+    return { bg: "bg-amber-100 border-amber-300 text-amber-800", dot: "bg-amber-500", label: "ערב" };
+  if (n.includes("weekend") || n.includes("סוף שבוע") || n.includes("שישי") || n.includes("שבת"))
+    return { bg: "bg-rose-100 border-rose-300 text-rose-800", dot: "bg-rose-500", label: "סוף שבוע" };
   return isHard
-    ? { bg: "bg-purple-100 border-purple-300 text-purple-800", dot: "bg-purple-500", label: "Hard" }
-    : { bg: "bg-teal-100 border-teal-300 text-teal-800", dot: "bg-teal-500", label: "Shift" };
+    ? { bg: "bg-purple-100 border-purple-300 text-purple-800", dot: "bg-purple-500", label: "קשה" }
+    : { bg: "bg-teal-100 border-teal-300 text-teal-800", dot: "bg-teal-500", label: "משמרת" };
 }
 
-const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAYS_HE = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
 
 function ShiftCell({ shift, onCellClick, dateStr, staffMember }) {
   if (!shift) {
@@ -52,7 +53,7 @@ function ShiftCell({ shift, onCellClick, dateStr, staffMember }) {
             <div className="flex items-center gap-1.5 mb-0.5">
               <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${color.dot}`} />
               <span className="text-[11px] font-semibold truncate leading-tight">
-                {shift.shift_type_name || "Shift"}
+                {shift.shift_type_name || "משמרת"}
               </span>
               {isGenerated && (
                 <Zap className="w-2.5 h-2.5 text-accent flex-shrink-0 ml-auto" />
@@ -62,15 +63,15 @@ function ShiftCell({ shift, onCellClick, dateStr, staffMember }) {
               {shift.start_time}–{shift.end_time}
             </p>
             {shift.status === "cancelled" && (
-              <span className="text-[9px] font-bold opacity-60 line-through">CANCELLED</span>
+            <span className="text-[9px] font-bold opacity-60 line-through">בוטל</span>
             )}
           </button>
         </TooltipTrigger>
         <TooltipContent side="top" className="text-xs">
           <p className="font-semibold">{shift.shift_type_name}</p>
           <p className="text-muted-foreground">{shift.start_time} – {shift.end_time}</p>
-          {shift.is_hard_shift && <p className="text-amber-500">⚡ Hard shift</p>}
-          <p className="capitalize">{shift.status}</p>
+          {shift.is_hard_shift && <p className="text-amber-500">⚡ משמרת קשה</p>}
+          <p>{shift.status === "planned" ? "מתוכנן" : shift.status === "completed" ? "הושלם" : "בוטל"}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -96,11 +97,11 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
 
   // Legend
   const legend = [
-    { label: "Morning", bg: "bg-blue-100 border-blue-300 text-blue-800", dot: "bg-blue-500" },
-    { label: "Day / Afternoon", bg: "bg-orange-100 border-orange-300 text-orange-800", dot: "bg-orange-500" },
-    { label: "Evening / Late", bg: "bg-amber-100 border-amber-300 text-amber-800", dot: "bg-amber-500" },
-    { label: "Night", bg: "bg-purple-100 border-purple-300 text-purple-800", dot: "bg-purple-500" },
-    { label: "Weekend", bg: "bg-rose-100 border-rose-300 text-rose-800", dot: "bg-rose-500" },
+    { label: "בוקר", bg: "bg-blue-100 border-blue-300 text-blue-800", dot: "bg-blue-500" },
+    { label: "צהריים", bg: "bg-orange-100 border-orange-300 text-orange-800", dot: "bg-orange-500" },
+    { label: "ערב", bg: "bg-amber-100 border-amber-300 text-amber-800", dot: "bg-amber-500" },
+    { label: "לילה", bg: "bg-purple-100 border-purple-300 text-purple-800", dot: "bg-purple-500" },
+    { label: "סוף שבוע", bg: "bg-rose-100 border-rose-300 text-rose-800", dot: "bg-rose-500" },
   ];
 
   return (
@@ -114,7 +115,7 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
           </div>
         ))}
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border text-xs text-muted-foreground">
-          <Zap className="w-3 h-3 text-accent" /> Auto-scheduled
+        <Zap className="w-3 h-3 text-accent" /> שיבוץ אוטומטי
         </div>
       </div>
 
@@ -122,7 +123,7 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
       {isScheduling && (
         <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/5 border border-primary/20 text-sm text-primary font-medium">
           <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-          Running smart scheduler… this may take a moment
+          מריץ שיבוץ חכם… אנא המתן
         </div>
       )}
 
@@ -132,8 +133,8 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
           <thead>
             <tr className="bg-muted/60">
               {/* Staff header */}
-              <th className="sticky left-0 z-10 bg-muted/80 backdrop-blur text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[160px] min-w-[160px] border-b border-r border-border">
-                Staff
+              <th className="sticky right-0 z-10 bg-muted/80 backdrop-blur text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[160px] min-w-[160px] border-b border-l border-border">
+                עובד
               </th>
               {days.map((day) => {
                 const isToday = isSameDay(day, today);
@@ -145,12 +146,12 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
                     }`}
                   >
                     <p className={`text-xs font-semibold uppercase tracking-wider ${isToday ? "text-primary" : "text-muted-foreground"}`}>
-                      {DAYS[day.getDay()]}
+                      {DAYS_HE[day.getDay()]}
                     </p>
                     <p className={`text-lg font-bold mt-0.5 ${isToday ? "text-primary" : "text-foreground"}`}>
                       {format(day, "d")}
                     </p>
-                    <p className="text-[10px] text-muted-foreground">{format(day, "MMM")}</p>
+                    <p className="text-[10px] text-muted-foreground">{format(day, "MMM", { locale: he })}</p>
                   </th>
                 );
               })}
@@ -160,7 +161,7 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
             {visibleStaff.length === 0 && (
               <tr>
                 <td colSpan={8} className="text-center py-12 text-muted-foreground text-sm">
-                  No staff members for this clinic
+                  אין עובדים במרפאה זו
                 </td>
               </tr>
             )}
@@ -173,14 +174,14 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
                 className="border-b border-border last:border-b-0 hover:bg-muted/20 transition-colors"
               >
                 {/* Staff name cell */}
-                <td className="sticky left-0 z-10 bg-card px-4 py-2 border-r border-border">
+                <td className="sticky right-0 z-10 bg-card px-4 py-2 border-l border-border">
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[11px] font-bold flex-shrink-0">
                       {member.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs font-semibold truncate">{member.name}</p>
-                      <p className="text-[10px] text-muted-foreground capitalize">{member.staff_role}</p>
+                      <p className="text-[10px] text-muted-foreground">{member.staff_role === "veterinarian" ? "וטרינר" : member.staff_role === "technician" ? "טכנאי" : "קבלן/ית"}</p>
                     </div>
                   </div>
                 </td>
@@ -200,7 +201,7 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
                     >
                       {isDayOff && !shift ? (
                         <div className="w-full min-h-[56px] flex items-center justify-center">
-                          <span className="text-[10px] text-muted-foreground/50 font-medium">Day off</span>
+                          <span className="text-[10px] text-muted-foreground/50 font-medium">יום חופש</span>
                         </div>
                       ) : (
                         <ShiftCell

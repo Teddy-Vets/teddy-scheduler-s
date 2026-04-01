@@ -1,5 +1,6 @@
 import React from "react";
 import { format, startOfWeek, addDays, isSameDay, parseISO } from "date-fns";
+import { he } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 
@@ -39,7 +40,7 @@ export default function ShiftCalendar({ shifts, weekOffset = 0, onShiftClick, st
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-muted-foreground">
-                {format(day, "EEE")}
+                {format(day, "EEE", { locale: he })}
               </span>
               <span
                 className={`text-sm font-semibold ${

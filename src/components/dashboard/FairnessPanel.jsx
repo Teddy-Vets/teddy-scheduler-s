@@ -33,9 +33,9 @@ export default function FairnessPanel({ staff, shifts }) {
       <Card className="border-0 shadow-sm">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base font-semibold">Fairness Index</CardTitle>
+            <CardTitle className="text-base font-semibold">מדד הוגנות</CardTitle>
             <Badge variant="secondary" className="text-xs">
-              Avg: {avgScore}% hard shifts
+              ממוצע: {avgScore}% משמרות קשות
             </Badge>
           </div>
         </CardHeader>
@@ -53,7 +53,7 @@ export default function FairnessPanel({ staff, shifts }) {
                       {!isImbalanced && s.totalShifts > 0 && <CheckCircle className="w-3.5 h-3.5 text-primary" />}
                     </div>
                     <span className="text-muted-foreground text-xs">
-                      {s.hardShifts}/{s.totalShifts} hard
+                      {s.hardShifts}/{s.totalShifts} קשות
                     </span>
                   </div>
                   <Progress
@@ -64,7 +64,7 @@ export default function FairnessPanel({ staff, shifts }) {
               );
             })}
             {fairnessData.filter(s => s.totalShifts > 0).length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-6">No shift data yet</p>
+              <p className="text-sm text-muted-foreground text-center py-6">אין נתוני משמרות עדיין</p>
             )}
           </div>
         </CardContent>

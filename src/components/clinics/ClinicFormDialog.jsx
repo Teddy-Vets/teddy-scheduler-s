@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Info } from "lucide-react";
 
-const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
 
 function generateId() {
   return "st_" + Math.random().toString(36).substring(2, 9);
@@ -80,12 +80,7 @@ export default function ClinicFormDialog({ open, onOpenChange, onSave, clinic })
   const numInput = (field, label, min = 0) => (
     <div className="space-y-1.5">
       <Label className="text-xs text-muted-foreground">{label}</Label>
-      <Input
-        type="number" min={min}
-        value={form[field]}
-        onChange={(e) => setField(field, parseInt(e.target.value) || 0)}
-        className="h-9"
-      />
+      <Input type="number" min={min} value={form[field]} onChange={(e) => setField(field, parseInt(e.target.value) || 0)} className="h-9" />
     </div>
   );
 
@@ -93,55 +88,55 @@ export default function ClinicFormDialog({ open, onOpenChange, onSave, clinic })
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-3 border-b shrink-0">
-          <DialogTitle>{clinic ? "Edit Clinic" : "Add Clinic"}</DialogTitle>
+          <DialogTitle>{clinic ? "עריכת מרפאה" : "הוספת מרפאה"}</DialogTitle>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
           <TabsList className="mx-6 mt-3 shrink-0">
-            <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="compliance">Compliance Rules</TabsTrigger>
+            <TabsTrigger value="details">פרטים</TabsTrigger>
+            <TabsTrigger value="compliance">כללי ציות</TabsTrigger>
             <TabsTrigger value="shifts">
-              Shift Types
+              סוגי משמרת
               {form.shift_types.length > 0 && (
-                <span className="ml-1.5 bg-primary/20 text-primary text-[10px] px-1.5 py-0.5 rounded-full font-semibold">
+                <span className="mr-1.5 bg-primary/20 text-primary text-[10px] px-1.5 py-0.5 rounded-full font-semibold">
                   {form.shift_types.length}
                 </span>
               )}
             </TabsTrigger>
           </TabsList>
 
-          {/* ── Details ── */}
+          {/* פרטים */}
           <TabsContent value="details" className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2 col-span-2 sm:col-span-1">
-                <Label>Clinic Name *</Label>
-                <Input value={form.name} onChange={(e) => setField("name", e.target.value)} placeholder="Downtown Vet Clinic" />
+                <Label>שם המרפאה *</Label>
+                <Input value={form.name} onChange={(e) => setField("name", e.target.value)} placeholder="מרפאה וטרינרית מרכז" />
               </div>
               <div className="space-y-2">
-                <Label>Status</Label>
+                <Label>סטטוס</Label>
                 <Select value={form.status} onValueChange={(v) => setField("status", v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="active">פעיל</SelectItem>
+                    <SelectItem value="inactive">לא פעיל</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Location / Address *</Label>
-              <Input value={form.location} onChange={(e) => setField("location", e.target.value)} placeholder="123 Main St, New York, NY" />
+              <Label>כתובת *</Label>
+              <Input value={form.location} onChange={(e) => setField("location", e.target.value)} placeholder="רחוב הרצל 1, תל אביב" />
             </div>
 
             <div className="space-y-2">
-              <Label>Active Days</Label>
-              <div className="flex gap-2">
+              <Label>ימי פעילות</Label>
+              <div className="flex gap-1.5 flex-wrap">
                 {DAYS.map((day, i) => (
                   <Button
                     key={i} type="button" size="sm"
                     variant={form.active_days.includes(i) ? "default" : "outline"}
-                    className="h-9 flex-1 text-xs"
+                    className="flex-1 min-w-[60px] text-xs"
                     onClick={() => toggleDay(i)}
                   >
                     {day}
@@ -152,53 +147,51 @@ export default function ClinicFormDialog({ open, onOpenChange, onSave, clinic })
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Opening Time</Label>
+                <Label>שעת פתיחה</Label>
                 <Input type="time" value={form.open_time} onChange={(e) => setField("open_time", e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>Closing Time</Label>
+                <Label>שעת סגירה</Label>
                 <Input type="time" value={form.close_time} onChange={(e) => setField("close_time", e.target.value)} />
               </div>
             </div>
           </TabsContent>
 
-          {/* ── Compliance ── */}
+          {/* כללי ציות */}
           <TabsContent value="compliance" className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
             <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs">
               <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
-              <p>These rules are enforced by the Smart Scheduler when auto-generating shifts.</p>
+              <p>כללים אלו נאכפים על ידי השיבוץ החכם בעת יצירת משמרות אוטומטית.</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              {numInput("overtime_threshold", "OT Threshold (hrs/week)", 1)}
-              {numInput("min_rest_hours", "Min Rest Between Shifts (hrs)", 1)}
-              {numInput("max_consecutive_days", "Max Consecutive Work Days", 1)}
-              {numInput("max_shifts_per_week", "Max Shifts Per Week", 1)}
+              {numInput("overtime_threshold", "סף שעות נוספות (שעות/שבוע)", 1)}
+              {numInput("min_rest_hours", "מינימום מנוחה בין משמרות (שעות)", 1)}
+              {numInput("max_consecutive_days", "מקסימום ימים רצופים", 1)}
+              {numInput("max_shifts_per_week", "מקסימום משמרות לשבוע", 1)}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              {numInput("max_fridays_per_month", "Max Fridays Per Month", 0)}
+              {numInput("max_fridays_per_month", "מקסימום שישי לחודש", 0)}
             </div>
           </TabsContent>
 
-          {/* ── Shift Types ── */}
+          {/* סוגי משמרת */}
           <TabsContent value="shifts" className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label>Shift Type Definitions</Label>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Define the shift types available at this clinic.
-                </p>
+                <Label>הגדרות סוגי משמרת</Label>
+                <p className="text-xs text-muted-foreground mt-0.5">הגדר את סוגי המשמרת הזמינים במרפאה זו.</p>
               </div>
               <Button type="button" variant="outline" size="sm" className="gap-1" onClick={addShiftType}>
-                <Plus className="w-3.5 h-3.5" /> Add Type
+                <Plus className="w-3.5 h-3.5" /> הוסף סוג
               </Button>
             </div>
 
             {form.shift_types.length === 0 && (
               <div className="text-center py-10 text-muted-foreground border-2 border-dashed rounded-xl">
-                <p className="text-sm font-medium">No shift types defined</p>
-                <p className="text-xs mt-1">Click "Add Type" to define morning, evening, night shifts, etc.</p>
+                <p className="text-sm font-medium">אין סוגי משמרת מוגדרים</p>
+                <p className="text-xs mt-1">לחץ על "הוסף סוג" להגדרת משמרות בוקר, ערב, לילה וכד׳</p>
               </div>
             )}
 
@@ -207,18 +200,15 @@ export default function ClinicFormDialog({ open, onOpenChange, onSave, clinic })
                 <div key={st.id} className="p-3 rounded-xl border bg-muted/30 space-y-3">
                   <div className="flex items-center gap-2">
                     <Input
-                      placeholder="Shift name (e.g. Morning)"
+                      placeholder='שם המשמרת (למשל "בוקר")'
                       className="flex-1 h-8 text-sm"
                       value={st.name}
                       onChange={(e) => updateShiftType(idx, "name", e.target.value)}
                     />
-                    <div className="flex items-center gap-1.5 ml-auto">
-                      <Switch
-                        checked={st.is_hard}
-                        onCheckedChange={(v) => updateShiftType(idx, "is_hard", v)}
-                      />
+                    <div className="flex items-center gap-1.5 mr-auto">
+                      <Switch checked={st.is_hard} onCheckedChange={(v) => updateShiftType(idx, "is_hard", v)} />
                       <span className={`text-xs font-medium ${st.is_hard ? "text-amber-600" : "text-muted-foreground"}`}>
-                        {st.is_hard ? "⚡ Hard" : "Hard shift"}
+                        {st.is_hard ? "⚡ קשה" : "קשה?"}
                       </span>
                     </div>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive flex-shrink-0" onClick={() => removeShiftType(idx)}>
@@ -227,11 +217,11 @@ export default function ClinicFormDialog({ open, onOpenChange, onSave, clinic })
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wide">Start Time</Label>
+                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wide">שעת התחלה</Label>
                       <Input type="time" className="h-8 text-sm" value={st.start_time} onChange={(e) => updateShiftType(idx, "start_time", e.target.value)} />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wide">End Time</Label>
+                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wide">שעת סיום</Label>
                       <Input type="time" className="h-8 text-sm" value={st.end_time} onChange={(e) => updateShiftType(idx, "end_time", e.target.value)} />
                     </div>
                   </div>
@@ -242,9 +232,9 @@ export default function ClinicFormDialog({ open, onOpenChange, onSave, clinic })
         </Tabs>
 
         <DialogFooter className="px-6 py-4 border-t shrink-0 gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>ביטול</Button>
           <Button onClick={() => onSave(form)} disabled={!form.name || !form.location}>
-            {clinic ? "Update Clinic" : "Create Clinic"}
+            {clinic ? "עדכן מרפאה" : "צור מרפאה"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -2,6 +2,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { format, startOfWeek, addDays } from "date-fns";
+import { he } from "date-fns/locale";
 import { motion } from "framer-motion";
 
 export default function WeeklyShiftsChart({ shifts }) {
@@ -13,7 +14,7 @@ export default function WeeklyShiftsChart({ shifts }) {
     const dayShifts = shifts.filter((s) => s.date === dateStr);
 
     return {
-      day: format(day, "EEE"),
+      day: format(day, "EEE", { locale: he }),
       planned: dayShifts.filter((s) => s.status === "planned").length,
       completed: dayShifts.filter((s) => s.status === "completed").length,
     };
@@ -27,7 +28,7 @@ export default function WeeklyShiftsChart({ shifts }) {
     >
       <Card className="border-0 shadow-sm">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base font-semibold">This Week's Shifts</CardTitle>
+          <CardTitle className="text-base font-semibold">משמרות השבוע</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[280px]">
@@ -45,8 +46,8 @@ export default function WeeklyShiftsChart({ shifts }) {
                   }}
                 />
                 <Legend wrapperStyle={{ fontSize: "12px" }} />
-                <Bar dataKey="planned" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Planned" />
-                <Bar dataKey="completed" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} name="Completed" />
+                <Bar dataKey="planned" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="מתוכנן" />
+                <Bar dataKey="completed" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} name="הושלם" />
               </BarChart>
             </ResponsiveContainer>
           </div>

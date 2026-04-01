@@ -50,10 +50,10 @@ export default function SalaryForecast({ staff, shifts, clinics }) {
       <Card className="border-0 shadow-sm">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base font-semibold">Weekly Salary Forecast</CardTitle>
+            <CardTitle className="text-base font-semibold">תחזית שכר שבועית</CardTitle>
             <div className="flex items-center gap-2">
               <DollarSign className="w-4 h-4 text-primary" />
-              <span className="text-lg font-bold">${totalCost.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+              <span className="text-lg font-bold">₪{totalCost.toLocaleString("he-IL", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
             </div>
           </div>
         </CardHeader>
@@ -71,18 +71,18 @@ export default function SalaryForecast({ staff, shifts, clinics }) {
                   {s.isOvertime && (
                     <Badge variant="destructive" className="text-[10px] px-1.5 py-0 flex items-center gap-1">
                       <AlertTriangle className="w-3 h-3" />
-                      OT
+                      שע״נ
                     </Badge>
                   )}
                 </div>
                 <div className="text-right text-sm flex-shrink-0">
-                  <p className="font-semibold">${s.cost.toFixed(0)}</p>
-                  <p className="text-[10px] text-muted-foreground">{s.totalHours}h</p>
+                  <p className="font-semibold">₪{Number(s.cost.toFixed(0)).toLocaleString("he-IL")}</p>
+                  <p className="text-[10px] text-muted-foreground">{s.totalHours} ש׳</p>
                 </div>
               </div>
             ))}
             {staffCosts.filter(s => s.totalHours > 0).length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-6">No shifts this week</p>
+              <p className="text-sm text-muted-foreground text-center py-6">אין משמרות השבוע</p>
             )}
           </div>
         </CardContent>
