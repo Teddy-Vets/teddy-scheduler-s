@@ -278,10 +278,11 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
           // 6. Min rest hours
           if (minRestHours > 0 && violatesRestHours(member, dateStr, shiftType, globalPool, minRestHours)) return false;
 
-          // 7. Max Fridays per month
+          // 7. Max Fridays per month (per-staff override or clinic default)
           if (isFriday) {
+            const fridayLimit = member.max_fridays_per_month != null ? member.max_fridays_per_month : maxFridaysPerMonth;
             const fridayCount = fridaysThisMonth(member.id, dateStr, globalPool);
-            if (fridayCount >= maxFridaysPerMonth) return false;
+            if (fridayCount >= fridayLimit) return false;
           }
 
           return true;

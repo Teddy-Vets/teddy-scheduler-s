@@ -47,6 +47,10 @@
       },
       "description": "Preferred shift type per day of week. Key = day index string, value = shift type ID"
     },
+    "max_fridays_per_month": {
+      "type": "number",
+      "description": "Max number of Fridays per month this staff member can work. Overrides clinic default."
+    },
     "absences": {
       "type": "array",
       "description": "Planned absences",

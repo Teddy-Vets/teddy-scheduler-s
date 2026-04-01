@@ -31,6 +31,7 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
       name: "", staff_role: "veterinarian", email: "", phone: "",
       hourly_rate: 0, assigned_clinic_ids: [], regular_days_off: [],
       preferred_shift_types: [], preferred_shifts_by_day: {}, absences: [], status: "active",
+      max_fridays_per_month: null,
     };
   }
 
@@ -48,6 +49,7 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
         regular_days_off: (member.regular_days_off || []).map(Number),
         preferred_shift_types: member.preferred_shift_types || [],
         preferred_shifts_by_day: member.preferred_shifts_by_day || {},
+        max_fridays_per_month: member.max_fridays_per_month ?? null,
         absences: member.absences || [],
         status: member.status || "active",
       });
@@ -202,6 +204,26 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
                     {day}
                   </Button>
                 ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>מקסימום שישי לחודש</Label>
+              <p className="text-xs text-muted-foreground -mt-1">עוקף את הגדרת המרפאה לעובד זה. השאר ריק לשימוש בברירת המחדל של המרפאה.</p>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min="0"
+                  max="5"
+                  className="w-24 h-9"
+                  placeholder="ברירת מחדל"
+                  value={form.max_fridays_per_month ?? ""}
+                  onChange={(e) => setForm((p) => ({
+                    ...p,
+                    max_fridays_per_month: e.target.value === "" ? null : parseInt(e.target.value) || 0,
+                  }))}
+                />
+                <span className="text-sm text-muted-foreground">ימי שישי לחודש</span>
               </div>
             </div>
 
