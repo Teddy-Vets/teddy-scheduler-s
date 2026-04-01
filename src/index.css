@@ -7,7 +7,7 @@
 @layer base {
   :root {
     --font-inter: 'Noto Sans Hebrew', sans-serif;
-    --background: 180 10% 98%;
+    --background: 60 9% 98%;
     --foreground: 30 84% 87%;
     --card: 0 0% 100%;
     --card-foreground: 221 100% 65%;
@@ -32,7 +32,7 @@
     --chart-4: 280 55% 55%;
     --chart-5: 340 65% 50%;
     --radius: 0.75rem;
-    --sidebar-background: 210 20% 10%;
+    --sidebar-background: 24 0% 0%;
     --sidebar-foreground: 180 8% 90%;
     --sidebar-primary: 174 62% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
