@@ -17,7 +17,7 @@ export default function AppLayout() {
     <div className="min-h-screen bg-background" dir="rtl">
       <Sidebar />
       <motion.main
-        className="mr-[72px] md:mr-[256px] transition-all duration-300"
+        className="pt-14 md:pt-0 mr-0 md:mr-[256px] transition-all duration-300"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
