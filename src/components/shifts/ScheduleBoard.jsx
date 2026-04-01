@@ -7,19 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Shift type colour palette – keyed by a few heuristics:
-// is_hard + night hours → purple, morning → blue, afternoon/evening → orange, late/overnight → purple, default → teal
+// morning → blue, afternoon → orange, evening → amber, default → teal
 export function getShiftColor(shiftTypeName = "", isHard = false) {
   const n = shiftTypeName.toLowerCase();
-  if (n.includes("night") || n.includes("לילה") || n.includes("overnight"))
-    return { bg: "bg-purple-100 border-purple-300 text-purple-800", dot: "bg-purple-500", label: "לילה" };
   if (n.includes("morning") || n.includes("בוקר") || n.includes("early"))
     return { bg: "bg-blue-100 border-blue-300 text-blue-800", dot: "bg-blue-500", label: "בוקר" };
   if (n.includes("afternoon") || n.includes("צהריים") || n.includes("day") || n.includes("יום"))
     return { bg: "bg-orange-100 border-orange-300 text-orange-800", dot: "bg-orange-500", label: "צהריים" };
   if (n.includes("late") || n.includes("evening") || n.includes("ערב"))
     return { bg: "bg-amber-100 border-amber-300 text-amber-800", dot: "bg-amber-500", label: "ערב" };
-  if (n.includes("weekend") || n.includes("סוף שבוע") || n.includes("שישי") || n.includes("שבת"))
-    return { bg: "bg-rose-100 border-rose-300 text-rose-800", dot: "bg-rose-500", label: "סוף שבוע" };
   return isHard
     ? { bg: "bg-purple-100 border-purple-300 text-purple-800", dot: "bg-purple-500", label: "קשה" }
     : { bg: "bg-teal-100 border-teal-300 text-teal-800", dot: "bg-teal-500", label: "משמרת" };
@@ -101,8 +97,6 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
     { label: "בוקר", bg: "bg-blue-100 border-blue-300 text-blue-800", dot: "bg-blue-500" },
     { label: "צהריים", bg: "bg-orange-100 border-orange-300 text-orange-800", dot: "bg-orange-500" },
     { label: "ערב", bg: "bg-amber-100 border-amber-300 text-amber-800", dot: "bg-amber-500" },
-    { label: "לילה", bg: "bg-purple-100 border-purple-300 text-purple-800", dot: "bg-purple-500" },
-    { label: "סוף שבוע", bg: "bg-rose-100 border-rose-300 text-rose-800", dot: "bg-rose-500" },
   ];
 
   return (
