@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, ChevronRight, ChevronLeft, Zap, Calendar, LayoutGrid } from "lucide-react";
+import { Plus, ChevronRight, ChevronLeft, Zap, Calendar, LayoutGrid, Columns } from "lucide-react";
 import { format, startOfWeek, addDays } from "date-fns";
 import { he } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +16,7 @@ import ShiftFormDialog from "../components/shifts/ShiftFormDialog";
 import ScheduleBoard from "../components/shifts/ScheduleBoard";
 import CellShiftDialog from "../components/shifts/CellShiftDialog";
 import SmartSchedulerDialog from "../components/shifts/SmartSchedulerDialog";
+import DayView from "../components/shifts/DayView";
 import { runSmartScheduler } from "../lib/smartScheduler";
 
 export default function Shifts() {
@@ -210,6 +211,9 @@ export default function Shifts() {
           <TabsTrigger value="calendar" className="gap-2">
             <Calendar className="w-4 h-4" /> לוח שנה
           </TabsTrigger>
+          <TabsTrigger value="dayview" className="gap-2">
+            <Columns className="w-4 h-4" /> מבט יומי
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="board">
@@ -236,6 +240,15 @@ export default function Shifts() {
             weekOffset={weekOffset}
             onShiftClick={(shift) => { setSelectedShift(shift); setCalDialogOpen(true); }}
             staff={staff}
+          />
+        </TabsContent>
+
+        <TabsContent value="dayview">
+          <DayView
+            shifts={filteredShifts}
+            staff={staff}
+            weekOffset={weekOffset}
+            onShiftClick={(shift) => { setSelectedShift(shift); setCalDialogOpen(true); }}
           />
         </TabsContent>
       </Tabs>
