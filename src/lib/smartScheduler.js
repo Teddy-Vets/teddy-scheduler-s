@@ -18,6 +18,7 @@
  */
 
 import { format, addDays, startOfWeek, differenceInHours, parse, startOfMonth, endOfMonth } from "date-fns";
+import { he } from "date-fns/locale";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -290,9 +291,9 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
 
         if (eligible.length === 0) {
           const roleLabels = { veterinarian: "וטרינר", technician: "טכנאי", receptionist: "קבלן/ית" };
-          const roleLabel = targetRole ? roleLabels[targetRole] || targetRole : "עובד כלשהו";
+          const roleLabel = (targetRole && roleLabels[targetRole]) || "עובד כלשהו";
           const globalPool = [...existingShifts, ...newShifts];
-          const candidatePool = clinicStaff.filter((m) => targetRole === null || targetRole === undefined || m.staff_role === targetRole);
+          const candidatePool = clinicStaff.filter((m) => !targetRole || m.staff_role === targetRole);
           
           // Detailed breakdown
           const details = [];
@@ -311,13 +312,11 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
               const fridayCount = fridaysThisMonth(m.id, dateStr, globalPool);
               if (fridayCount >= fridayLimit) issues.push(`שישי (${fridayCount}/${fridayLimit})`);
             }
-            if (issues.length > 0) {
-              details.push(`${m.name}: ${issues.join(", ")}`);
-            }
+            if (issues.length > 0) details.push(`${m.name}: ${issues.join(", ")}`);
           }
           
-          const reasonStr = details.length > 0 ? ` — ${details.join(" | ")}` : " (אין בעיות בנתונים)";
-          const warningMsg = `❌ "${shiftType.name}" ביום ${format(date, "EEE, MMM d")} — אין ${roleLabel} זמין${reasonStr}`;
+          const reasonStr = details.length > 0 ? ` — ${details.join(" | ")}` : "";
+          const warningMsg = `❌ "${shiftType.name}" ב${format(date, "EEEE d.M", { locale: he })} — אין ${roleLabel} זמין${reasonStr}`;
           warnings.push(warningMsg);
           continue;
         }
