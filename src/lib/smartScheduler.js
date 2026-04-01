@@ -116,7 +116,7 @@ function fridaysThisMonth(staffId, dateStr, allShifts) {
  * Score a candidate for a given shift type.
  * Lower score = more preferred.
  */
-function scoreCandidate(member, shiftType, allShifts, weekShifts, monthShifts) {
+function scoreCandidate(member, shiftType, allShifts, weekShifts, monthShifts, dayOfWeek) {
   let score = 0;
 
   // Load: fewer shifts this week → preferred
@@ -129,8 +129,14 @@ function scoreCandidate(member, shiftType, allShifts, weekShifts, monthShifts) {
     score += hardThisMonth * 20;
   }
 
-  // Preference: if this is a preferred shift type, big bonus (negative = better)
-  if ((member.preferred_shift_types || []).includes(shiftType.id)) {
+  // Preference: check day-based preferences (object) or legacy array
+  const prefs = member.preferred_shift_types;
+  if (prefs && !Array.isArray(prefs)) {
+    // New format: { dayIndex: shiftTypeId }
+    if (dayOfWeek !== undefined && prefs[dayOfWeek] === shiftType.id) {
+      score -= 50;
+    }
+  } else if (Array.isArray(prefs) && prefs.includes(shiftType.id)) {
     score -= 50;
   }
 
@@ -307,8 +313,8 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
         // Score candidates
         eligible.sort(
           (a, b) =>
-            scoreCandidate(a, shiftType, globalPool, weekShiftsPool, monthShiftsPool) -
-            scoreCandidate(b, shiftType, globalPool, weekShiftsPool, monthShiftsPool)
+            scoreCandidate(a, shiftType, globalPool, weekShiftsPool, monthShiftsPool, dayOfWeek) -
+            scoreCandidate(b, shiftType, globalPool, weekShiftsPool, monthShiftsPool, dayOfWeek)
         );
 
         const candidate = eligible[0];

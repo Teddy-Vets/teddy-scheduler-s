@@ -92,12 +92,22 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
     (st, idx, arr) => arr.findIndex((s) => s.id === st.id) === idx
   );
 
-  const togglePrefShift = (id) => setForm((p) => ({
-    ...p,
-    preferred_shift_types: p.preferred_shift_types.includes(id)
-      ? p.preferred_shift_types.filter((x) => x !== id)
-      : [...p.preferred_shift_types, id],
-  }));
+  // preferred_shift_types is now an object: { dayIndex: shiftTypeId | null }
+  const getPrefForDay = (dayIdx) => {
+    const prefs = form.preferred_shift_types;
+    if (Array.isArray(prefs)) return null; // legacy
+    return prefs?.[dayIdx] || null;
+  };
+
+  const setPrefForDay = (dayIdx, shiftTypeId) => setForm((p) => {
+    const prefs = Array.isArray(p.preferred_shift_types) ? {} : { ...(p.preferred_shift_types || {}) };
+    if (prefs[dayIdx] === shiftTypeId) {
+      const updated = { ...prefs };
+      delete updated[dayIdx];
+      return { ...p, preferred_shift_types: updated };
+    }
+    return { ...p, preferred_shift_types: { ...prefs, [dayIdx]: shiftTypeId } };
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -200,21 +210,48 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
             </div>
 
             <div className="space-y-3">
-              <Label>סוגי משמרת מועדפים</Label>
-              <p className="text-xs text-muted-foreground -mt-1">השיבוץ החכם יעדיף את המשמרות הללו עבור עובד זה.</p>
+              <Label>העדפות משמרת לפי יום</Label>
+              <p className="text-xs text-muted-foreground -mt-1">בחר לכל יום את סוג המשמרת המועדף. השיבוץ החכם יעדיף את הבחירות הללו.</p>
               {uniqueShiftTypes.length === 0 ? (
                 <p className="text-xs text-muted-foreground italic">שייך עובד זה למרפאה תחילה כדי לראות סוגי משמרת.</p>
               ) : (
                 <div className="space-y-2">
-                  {uniqueShiftTypes.map((st) => (
-                    <label key={st.id} className="flex items-center gap-3 p-2.5 rounded-lg border hover:bg-muted/30 cursor-pointer">
-                      <Checkbox checked={form.preferred_shift_types.includes(st.id)} onCheckedChange={() => togglePrefShift(st.id)} />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">{st.name} {st.is_hard ? "⚡" : ""}</p>
-                        <p className="text-xs text-muted-foreground">{st.start_time}–{st.end_time} · {st.clinicName}</p>
+                  {DAYS.map((dayName, dayIdx) => {
+                    const selected = getPrefForDay(dayIdx);
+                    return (
+                      <div key={dayIdx} className="flex items-center gap-2 p-2 rounded-lg border bg-muted/20">
+                        <span className="text-xs font-medium w-14 text-right shrink-0 text-muted-foreground">{dayName}</span>
+                        <div className="flex flex-wrap gap-1 flex-1">
+                          {uniqueShiftTypes.map((st) => {
+                            const isActive = selected === st.id;
+                            return (
+                              <button
+                                key={st.id}
+                                type="button"
+                                onClick={() => setPrefForDay(dayIdx, st.id)}
+                                className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+                                  isActive
+                                    ? "bg-primary text-primary-foreground border-primary"
+                                    : "bg-background text-muted-foreground border-input hover:border-primary/50 hover:text-foreground"
+                                }`}
+                              >
+                                {st.name}{st.is_hard ? " ⚡" : ""}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {selected && (
+                          <button
+                            type="button"
+                            onClick={() => setPrefForDay(dayIdx, selected)}
+                            className="text-xs text-muted-foreground hover:text-destructive shrink-0"
+                          >
+                            ✕
+                          </button>
+                        )}
                       </div>
-                    </label>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
