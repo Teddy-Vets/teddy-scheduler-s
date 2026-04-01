@@ -180,6 +180,11 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
     const isFriday = dayOfWeek === 5;
 
     for (const shiftType of clinic.shift_types) {
+      // Skip if this shift type has specific_days defined and today is not one of them
+      if (shiftType.specific_days && shiftType.specific_days.length > 0) {
+        if (!shiftType.specific_days.map(normDay).includes(dayOfWeek)) continue;
+      }
+
       // Build required slots per role from required_staff
       const requiredStaff = shiftType.required_staff || {};
       const roleSlots = [];
