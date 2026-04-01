@@ -103,9 +103,17 @@ export default function Shifts() {
     }
     const clinic = clinics.find((c) => c.id === selectedClinicId);
     if (!clinic) return;
+
+    // Filter existing shifts for this clinic's week
+    const weekStart = startOfWeek(addDays(new Date(), weekOffset * 7), { weekStartsOn: 0 });
+    const weekEnd = addDays(weekStart, 6);
+    const weekStartStr = format(weekStart, "yyyy-MM-dd");
+    const weekEndStr = format(weekEnd, "yyyy-MM-dd");
+    const weekShifts = shifts.filter((s) => s.clinic_id === clinic.id && s.date >= weekStartStr && s.date <= weekEndStr);
+
     setIsScheduling(true);
     setTimeout(() => {
-      const result = runSmartScheduler({ clinic, allStaff: staff, existingShifts: shifts, weekOffset });
+      const result = runSmartScheduler({ clinic, allStaff: staff, existingShifts: weekShifts, weekOffset });
       setSchedulerResult(result);
       setIsScheduling(false);
       setSchedulerDialogOpen(true);
@@ -282,9 +290,8 @@ export default function Shifts() {
         weekOffset={weekOffset}
         onConfirm={handleConfirmSchedule}
         isCreating={isCreatingShifts}
-        clinic={clinics.find((c) => c.id === selectedClinicId)}
+        clinic={selectedClinicId !== "all" ? clinics.find((c) => c.id === selectedClinicId) : null}
         staff={staff}
-        allShifts={shifts}
       />
 
       <Toaster />
