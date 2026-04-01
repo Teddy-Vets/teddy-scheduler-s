@@ -190,11 +190,6 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
         if (!shiftType.specific_days.map(normDay).includes(dayOfWeek)) continue;
       }
 
-      // Special handling for Friday morning shift - only on Fridays (day 5)
-      if (shiftType.name && shiftType.name.includes("שישי")) {
-        if (dayOfWeek !== 5) continue;
-      }
-
       // Build required slots per role from required_staff
       const requiredStaff = shiftType.required_staff || {};
       const roleSlots = [];
