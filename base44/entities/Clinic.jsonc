@@ -63,8 +63,19 @@
           "end_time": {
             "type": "string"
           },
-          "is_hard": {
-            "type": "boolean"
+          "required_staff": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Required staff count by role (veterinarian, technician, receptionist)"
+          },
+          "specific_days": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "description": "Specific days for this shift (0=Sun, 6=Sat). Empty = all days."
           }
         }
       }

@@ -211,21 +211,15 @@ export default function ClinicFormDialog({ open, onOpenChange, onSave, clinic })
               {form.shift_types.map((st, idx) => (
                 <div key={st.id} className="p-3 rounded-xl border bg-muted/30 space-y-3">
                   <div className="flex items-center gap-2">
-                    <Input
-                      placeholder='שם המשמרת (למשל "בוקר")'
-                      className="flex-1 h-8 text-sm"
-                      value={st.name}
-                      onChange={(e) => updateShiftType(idx, "name", e.target.value)}
-                    />
-                    <div className="flex items-center gap-1.5 mr-auto">
-                      <Switch checked={st.is_hard} onCheckedChange={(v) => updateShiftType(idx, "is_hard", v)} />
-                      <span className={`text-xs font-medium ${st.is_hard ? "text-amber-600" : "text-muted-foreground"}`}>
-                        {st.is_hard ? "⚡ קשה" : "קשה?"}
-                      </span>
-                    </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive flex-shrink-0" onClick={() => removeShiftType(idx)}>
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
+                  <Input
+                    placeholder='שם המשמרת (למשל "בוקר")'
+                    className="flex-1 h-8 text-sm"
+                    value={st.name}
+                    onChange={(e) => updateShiftType(idx, "name", e.target.value)}
+                  />
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive flex-shrink-0" onClick={() => removeShiftType(idx)}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
