@@ -30,7 +30,7 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
     return {
       name: "", staff_role: "veterinarian", email: "", phone: "",
       hourly_rate: 0, assigned_clinic_ids: [], regular_days_off: [],
-      preferred_shift_types: {}, absences: [], status: "active",
+      preferred_shift_types: [], preferred_shifts_by_day: {}, absences: [], status: "active",
     };
   }
 
@@ -46,7 +46,8 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
         hourly_rate: member.hourly_rate || 0,
         assigned_clinic_ids: member.assigned_clinic_ids || [],
         regular_days_off: (member.regular_days_off || []).map(Number),
-        preferred_shift_types: (Array.isArray(member.preferred_shift_types) && member.preferred_shift_types.length === 0) || !member.preferred_shift_types ? {} : member.preferred_shift_types,
+        preferred_shift_types: member.preferred_shift_types || [],
+        preferred_shifts_by_day: member.preferred_shifts_by_day || {},
         absences: member.absences || [],
         status: member.status || "active",
       });
@@ -92,21 +93,16 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
     (st, idx, arr) => arr.findIndex((s) => s.id === st.id) === idx
   );
 
-  // preferred_shift_types is now an object: { dayIndex: shiftTypeId | null }
-  const getPrefForDay = (dayIdx) => {
-    const prefs = form.preferred_shift_types;
-    if (Array.isArray(prefs)) return null; // legacy
-    return prefs?.[dayIdx] || null;
-  };
+  const getPrefForDay = (dayIdx) => form.preferred_shifts_by_day?.[dayIdx] || null;
 
   const setPrefForDay = (dayIdx, shiftTypeId) => setForm((p) => {
-    const prefs = Array.isArray(p.preferred_shift_types) ? {} : { ...(p.preferred_shift_types || {}) };
+    const prefs = { ...(p.preferred_shifts_by_day || {}) };
     if (prefs[dayIdx] === shiftTypeId) {
-      const updated = { ...prefs };
-      delete updated[dayIdx];
-      return { ...p, preferred_shift_types: updated };
+      delete prefs[dayIdx];
+    } else {
+      prefs[dayIdx] = shiftTypeId;
     }
-    return { ...p, preferred_shift_types: { ...prefs, [dayIdx]: shiftTypeId } };
+    return { ...p, preferred_shifts_by_day: prefs };
   });
 
   return (

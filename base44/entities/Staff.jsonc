@@ -38,7 +38,11 @@
       "items": {
         "type": "string"
       },
-      "description": "Preferred shift type IDs"
+      "description": "Preferred shift type IDs (legacy)"
+    },
+    "preferred_shifts_by_day": {
+      "type": "object",
+      "description": "Preferred shift type per day of week. Key = day index (0-6), value = shift type ID"
     },
     "absences": {
       "type": "array",

@@ -129,15 +129,13 @@ function scoreCandidate(member, shiftType, allShifts, weekShifts, monthShifts, d
     score += hardThisMonth * 20;
   }
 
-  // Preference: check day-based preferences (object) or legacy array
-  const prefs = member.preferred_shift_types;
-  if (prefs && !Array.isArray(prefs)) {
-    // New format: { dayIndex: shiftTypeId }
-    if (dayOfWeek !== undefined && prefs[dayOfWeek] === shiftType.id) {
-      score -= 50;
-    }
-  } else if (Array.isArray(prefs) && prefs.includes(shiftType.id)) {
+  // Preference: check day-based preferences
+  const dayPrefs = member.preferred_shifts_by_day;
+  if (dayPrefs && dayOfWeek !== undefined && dayPrefs[dayOfWeek] === shiftType.id) {
     score -= 50;
+  } else if (Array.isArray(member.preferred_shift_types) && member.preferred_shift_types.includes(shiftType.id)) {
+    // legacy fallback
+    score -= 30;
   }
 
   return score;
