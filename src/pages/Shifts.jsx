@@ -104,16 +104,10 @@ export default function Shifts() {
     const clinic = clinics.find((c) => c.id === selectedClinicId);
     if (!clinic) return;
 
-    // Filter existing shifts for this clinic's week
-    const weekStart = startOfWeek(addDays(new Date(), weekOffset * 7), { weekStartsOn: 0 });
-    const weekEnd = addDays(weekStart, 6);
-    const weekStartStr = format(weekStart, "yyyy-MM-dd");
-    const weekEndStr = format(weekEnd, "yyyy-MM-dd");
-    const weekShifts = shifts.filter((s) => s.clinic_id === clinic.id && s.date >= weekStartStr && s.date <= weekEndStr);
-
     setIsScheduling(true);
     setTimeout(() => {
-      const result = runSmartScheduler({ clinic, allStaff: staff, existingShifts: weekShifts, weekOffset });
+      // Pass ALL shifts (across all clinics and dates) so rules like max_shifts_per_week work globally
+      const result = runSmartScheduler({ clinic, allStaff: staff, existingShifts: shifts, weekOffset });
       setSchedulerResult(result);
       setIsScheduling(false);
       setSchedulerDialogOpen(true);
