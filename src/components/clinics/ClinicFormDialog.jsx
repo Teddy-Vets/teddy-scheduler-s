@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -30,31 +30,10 @@ export default function ClinicFormDialog({ open, onOpenChange, onSave, clinic })
   const [form, setForm] = useState(defaultForm());
   const [activeTab, setActiveTab] = useState("details");
 
-  const prevOpenRef = useRef(false);
   useEffect(() => {
-    const justOpened = open && !prevOpenRef.current;
-    prevOpenRef.current = open;
-    if (!justOpened) return;
+    if (!open) return;
     setActiveTab("details");
-    if (clinic) {
-      setForm({
-        name: clinic.name || "",
-        location: clinic.location || "",
-        active_days: clinic.active_days || [1, 2, 3, 4, 5],
-        open_time: clinic.open_time || "08:00",
-        close_time: clinic.close_time || "20:00",
-        overtime_threshold: clinic.overtime_threshold ?? 40,
-        min_rest_hours: clinic.min_rest_hours ?? 11,
-        max_consecutive_days: clinic.max_consecutive_days ?? 6,
-        max_shifts_per_week: clinic.max_shifts_per_week ?? 5,
-        max_fridays_per_month: clinic.max_fridays_per_month ?? 2,
-        shift_types: clinic.shift_types || [],
-        status: clinic.status || "active",
-      });
-    } else {
-      setForm(defaultForm());
-    }
-  }, [clinic, open]);
+  }, [open]);
 
   const setField = (field, value) => setForm((p) => ({ ...p, [field]: value }));
 
