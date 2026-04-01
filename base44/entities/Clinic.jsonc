@@ -1,0 +1,85 @@
+{
+  "name": "Clinic",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Clinic name"
+    },
+    "location": {
+      "type": "string",
+      "description": "Clinic address/location"
+    },
+    "active_days": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "description": "Active days (0=Sun, 6=Sat)"
+    },
+    "open_time": {
+      "type": "string",
+      "description": "Opening time HH:MM"
+    },
+    "close_time": {
+      "type": "string",
+      "description": "Closing time HH:MM"
+    },
+    "overtime_threshold": {
+      "type": "number",
+      "description": "Weekly hours before overtime kicks in"
+    },
+    "min_rest_hours": {
+      "type": "number",
+      "description": "Minimum rest hours between shifts"
+    },
+    "max_consecutive_days": {
+      "type": "number",
+      "description": "Maximum consecutive work days"
+    },
+    "max_shifts_per_week": {
+      "type": "number",
+      "description": "Maximum shifts per week per staff"
+    },
+    "max_fridays_per_month": {
+      "type": "number",
+      "description": "Maximum Fridays per month per staff"
+    },
+    "shift_types": {
+      "type": "array",
+      "description": "Available shift types for this clinic",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "start_time": {
+            "type": "string"
+          },
+          "end_time": {
+            "type": "string"
+          },
+          "is_hard": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "name",
+    "location"
+  ]
+}

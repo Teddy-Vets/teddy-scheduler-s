@@ -1,0 +1,74 @@
+{
+  "name": "Shift",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "description": "Shift date in YYYY-MM-DD format"
+    },
+    "shift_type_id": {
+      "type": "string",
+      "description": "Reference to shift type ID from clinic"
+    },
+    "shift_type_name": {
+      "type": "string",
+      "description": "Shift type name for display"
+    },
+    "staff_id": {
+      "type": "string",
+      "description": "Reference to staff member ID"
+    },
+    "staff_name": {
+      "type": "string",
+      "description": "Staff member name for display"
+    },
+    "clinic_id": {
+      "type": "string",
+      "description": "Reference to clinic ID"
+    },
+    "clinic_name": {
+      "type": "string",
+      "description": "Clinic name for display"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "planned",
+        "completed",
+        "cancelled"
+      ],
+      "default": "planned"
+    },
+    "start_time": {
+      "type": "string",
+      "description": "Shift start time HH:MM"
+    },
+    "end_time": {
+      "type": "string",
+      "description": "Shift end time HH:MM"
+    },
+    "actual_start_time": {
+      "type": "string",
+      "description": "Actual start time if different"
+    },
+    "actual_end_time": {
+      "type": "string",
+      "description": "Actual end time if different"
+    },
+    "generated_by_scheduler": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this shift was auto-generated"
+    },
+    "is_hard_shift": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this is a hard shift (night/weekend)"
+    }
+  },
+  "required": [
+    "date",
+    "staff_id",
+    "clinic_id"
+  ]
+}

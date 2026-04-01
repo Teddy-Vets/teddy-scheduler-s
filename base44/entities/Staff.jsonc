@@ -1,0 +1,87 @@
+{
+  "name": "Staff",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Staff member full name"
+    },
+    "staff_role": {
+      "type": "string",
+      "enum": [
+        "veterinarian",
+        "technician",
+        "receptionist"
+      ],
+      "description": "Staff professional role"
+    },
+    "assigned_clinic_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs of clinics this staff is assigned to"
+    },
+    "hourly_rate": {
+      "type": "number",
+      "description": "Hourly pay rate"
+    },
+    "regular_days_off": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "description": "Regular days off (0=Sun, 6=Sat)"
+    },
+    "preferred_shift_types": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Preferred shift type IDs"
+    },
+    "absences": {
+      "type": "array",
+      "description": "Planned absences",
+      "items": {
+        "type": "object",
+        "properties": {
+          "start_date": {
+            "type": "string"
+          },
+          "end_date": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "vacation",
+              "sick",
+              "other"
+            ]
+          }
+        }
+      }
+    },
+    "email": {
+      "type": "string",
+      "description": "Staff email"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Staff phone number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "name",
+    "staff_role"
+  ]
+}
