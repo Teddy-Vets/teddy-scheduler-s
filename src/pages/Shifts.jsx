@@ -262,7 +262,7 @@ export default function Shifts() {
         clinics={clinics}
         staff={staff}
         onSave={handleCellSave}
-        onDelete={(id) => deleteMutation.mutate(id)}
+        onDelete={(id) => { deleteMutation.mutate(id); setCellDialogOpen(false); }}
       />
 
       <ShiftFormDialog
