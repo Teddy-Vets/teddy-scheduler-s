@@ -289,9 +289,8 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
         });
 
         if (eligible.length === 0) {
-          const roleLabel = targetRole || "כלשהו";
+          const roleLabel = targetRole ? clinicStaff.find((m) => m.staff_role === targetRole)?.staff_role || targetRole : "עובד כלשהו";
           const globalPool = [...existingShifts, ...newShifts];
-          const reasons = [];
           const candidatePool = clinicStaff.filter((m) => targetRole === null || targetRole === undefined || m.staff_role === targetRole);
           
           // Detailed breakdown
@@ -316,7 +315,7 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
             }
           }
           
-          const reasonStr = details.length > 0 ? ` — ${details.join(" | ")}` : " (נתוני עובד לא ברורים)";
+          const reasonStr = details.length > 0 ? ` — ${details.join(" | ")}` : " (אין בעיות בנתונים)";
           const warningMsg = `❌ "${shiftType.name}" ביום ${format(date, "EEE, MMM d")} — אין ${roleLabel} זמין${reasonStr}`;
           warnings.push(warningMsg);
           continue;
