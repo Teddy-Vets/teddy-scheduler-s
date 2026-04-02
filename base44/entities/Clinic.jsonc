@@ -17,13 +17,28 @@
       },
       "description": "Active days (0=Sun, 6=Sat)"
     },
+    "day_hours": {
+      "type": "object",
+      "description": "Per-day open/close times. Key = day index string (0-6), value = { open_time, close_time }",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "open_time": {
+            "type": "string"
+          },
+          "close_time": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "open_time": {
       "type": "string",
-      "description": "Opening time HH:MM"
+      "description": "Default opening time HH:MM (fallback if day_hours not set)"
     },
     "close_time": {
       "type": "string",
-      "description": "Closing time HH:MM"
+      "description": "Default closing time HH:MM (fallback if day_hours not set)"
     },
     "overtime_threshold": {
       "type": "number",

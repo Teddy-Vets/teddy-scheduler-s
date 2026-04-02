@@ -24,6 +24,15 @@ function shiftDurationHours(st) {
   return mins / 60;
 }
 
+function getDayOpenHours(clinic, dow) {
+  const dayH = clinic.day_hours?.[dow] || clinic.day_hours?.[String(dow)];
+  const openTime = dayH?.open_time || clinic.open_time || "09:00";
+  const closeTime = dayH?.close_time || clinic.close_time || "20:00";
+  const [oh, om] = openTime.split(":").map(Number);
+  const [ch, cm] = closeTime.split(":").map(Number);
+  return { openTime, closeTime, hours: ((ch * 60 + cm) - (oh * 60 + om)) / 60 };
+}
+
 function calcPlannedHoursDetailed(clinic, monthDate) {
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
@@ -33,15 +42,13 @@ function calcPlannedHoursDetailed(clinic, monthDate) {
   const activeDays = (clinic.active_days || []).map(Number);
   const shiftTypes = clinic.shift_types || [];
 
-  const [oh, om] = (clinic.open_time || "08:00").split(":").map(Number);
-  const [ch, cm] = (clinic.close_time || "20:00").split(":").map(Number);
-  const openHoursPerDay = ((ch * 60 + cm) - (oh * 60 + om)) / 60;
-
   const DAY_NAMES = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
   const lines = [];
   lines.push(`📅 חודש: ${format(monthDate, "MMMM yyyy", { locale: he })}`);
-  lines.push(`🕐 שעות פתיחה: ${clinic.open_time || "08:00"} – ${clinic.close_time || "20:00"} (${openHoursPerDay} שע׳/יום)`);
-  lines.push(`📋 ימי פעילות: ${activeDays.map(d => DAY_NAMES[d]).join(", ")}`);
+  lines.push(`📋 ימי פעילות: ${activeDays.map(d => {
+    const dh = getDayOpenHours(clinic, d);
+    return `${DAY_NAMES[d]} (${dh.openTime}-${dh.closeTime})`;
+  }).join(", ")}`);
   lines.push(`🔧 סוגי משמרת: ${shiftTypes.map(st => `${st.name} (${st.start_time}-${st.end_time}, וטרינרים:${st.required_staff?.vet||0}, טכנאים:${st.required_staff?.tech||0})`).join(" | ")}`);
   lines.push("─".repeat(60));
 
@@ -61,9 +68,10 @@ function calcPlannedHoursDetailed(clinic, monthDate) {
 
     const isEve = eves.has(dateStr);
     const effectiveDow = isEve ? 5 : dow;
+    const { openTime, closeTime, hours: openHoursThisDay } = getDayOpenHours(clinic, effectiveDow);
 
     totals.workDays += 1;
-    totals.clinicOpen += openHoursPerDay;
+    totals.clinicOpen += openHoursThisDay;
 
     let dayVet = 0, dayTech = 0;
     const shiftDetails = [];
@@ -86,13 +94,13 @@ function calcPlannedHoursDetailed(clinic, monthDate) {
     totals.tech += dayTech;
 
     const eveTag = isEve ? " [ערב חג → כיום שישי]" : "";
-    lines.push(`✅ ${dateStr} (${DAY_NAMES[dow]})${eveTag} — פתיחה: ${openHoursPerDay}שע׳, וטרינרים: ${dayVet}שע׳, טכנאים: ${dayTech}שע׳`);
+    lines.push(`✅ ${dateStr} (${DAY_NAMES[dow]})${eveTag} — פתיחה: ${openTime}-${closeTime} (${openHoursThisDay}שע׳), וטרינרים: ${dayVet}שע׳, טכנאים: ${dayTech}שע׳`);
     shiftDetails.forEach(l => lines.push(l));
   }
 
   lines.push("─".repeat(60));
   lines.push(`📊 סיכום: ${totals.workDays} ימי עבודה`);
-  lines.push(`   שעות פתיחה: ${totals.workDays} × ${openHoursPerDay} = ${totals.clinicOpen} שע׳`);
+  lines.push(`   שעות פתיחה: ${totals.clinicOpen} שע׳`);
   lines.push(`   שעות וטרינרים: ${totals.vet} שע׳`);
   lines.push(`   שעות טכנאים: ${totals.tech} שע׳`);
 
@@ -108,10 +116,6 @@ function calcPlannedHours(clinic, monthDate) {
   const activeDays = (clinic.active_days || []).map(Number);
   const shiftTypes = clinic.shift_types || [];
 
-  const [oh, om] = (clinic.open_time || "08:00").split(":").map(Number);
-  const [ch, cm] = (clinic.close_time || "20:00").split(":").map(Number);
-  const openHoursPerDay = ((ch * 60 + cm) - (oh * 60 + om)) / 60;
-
   const totals = { vet: 0, tech: 0, clinicOpen: 0, workDays: 0 };
 
   for (let d = 1; d <= daysInMonth; d++) {
@@ -123,9 +127,10 @@ function calcPlannedHours(clinic, monthDate) {
     if (holidays.has(dateStr)) continue;
 
     const effectiveDow = eves.has(dateStr) ? 5 : dow;
+    const { hours: openHoursThisDay } = getDayOpenHours(clinic, effectiveDow);
 
     totals.workDays += 1;
-    totals.clinicOpen += openHoursPerDay;
+    totals.clinicOpen += openHoursThisDay;
 
     for (const st of shiftTypes) {
       const specificDays = (st.specific_days || []).map(Number);
@@ -133,10 +138,7 @@ function calcPlannedHours(clinic, monthDate) {
 
       const hours = shiftDurationHours(st);
       const required = st.required_staff || {};
-
-      // vet: hours × number of vets required in this shift
       totals.vet += (parseInt(required.vet) || 0) * hours;
-      // tech: hours × number of techs required in this shift
       totals.tech += (parseInt(required.tech) || 0) * hours;
     }
   }

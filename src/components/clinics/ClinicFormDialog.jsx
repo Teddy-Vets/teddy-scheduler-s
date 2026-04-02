@@ -16,10 +16,15 @@ function generateId() {
   return "st_" + Math.random().toString(36).substring(2, 9);
 }
 
+function defaultDayHours() {
+  return { open_time: "09:00", close_time: "20:00" };
+}
+
 function defaultForm() {
   return {
     name: "", location: "", active_days: [1, 2, 3, 4, 5],
-    open_time: "08:00", close_time: "20:00",
+    day_hours: { 1: defaultDayHours(), 2: defaultDayHours(), 3: defaultDayHours(), 4: defaultDayHours(), 5: defaultDayHours() },
+    open_time: "09:00", close_time: "20:00",
     overtime_threshold: 40, min_rest_hours: 11,
     max_consecutive_days: 6, max_shifts_per_week: 5,
     max_fridays_per_month: 2, shift_types: [], status: "active",
@@ -34,11 +39,21 @@ export default function ClinicFormDialog({ open, onOpenChange, onSave, clinic })
     if (!open) return;
     setActiveTab("details");
     if (clinic) {
+      const activeDays = clinic.active_days || [1, 2, 3, 4, 5];
+      // Build day_hours: use existing day_hours, or fall back to global open/close
+      const dayHours = {};
+      activeDays.forEach((d) => {
+        dayHours[d] = clinic.day_hours?.[d] || {
+          open_time: clinic.open_time || "09:00",
+          close_time: clinic.close_time || "20:00",
+        };
+      });
       setForm({
         name: clinic.name || "",
         location: clinic.location || "",
-        active_days: clinic.active_days || [1, 2, 3, 4, 5],
-        open_time: clinic.open_time || "08:00",
+        active_days: activeDays,
+        day_hours: dayHours,
+        open_time: clinic.open_time || "09:00",
         close_time: clinic.close_time || "20:00",
         overtime_threshold: clinic.overtime_threshold ?? 40,
         min_rest_hours: clinic.min_rest_hours ?? 11,
@@ -55,11 +70,26 @@ export default function ClinicFormDialog({ open, onOpenChange, onSave, clinic })
 
   const setField = (field, value) => setForm((p) => ({ ...p, [field]: value }));
 
-  const toggleDay = (day) => setForm((p) => ({
-    ...p,
-    active_days: p.active_days.includes(day)
+  const toggleDay = (day) => setForm((p) => {
+    const isActive = p.active_days.includes(day);
+    const newActiveDays = isActive
       ? p.active_days.filter((d) => d !== day)
-      : [...p.active_days, day].sort((a, b) => a - b),
+      : [...p.active_days, day].sort((a, b) => a - b);
+    const newDayHours = { ...p.day_hours };
+    if (isActive) {
+      delete newDayHours[day];
+    } else {
+      newDayHours[day] = defaultDayHours();
+    }
+    return { ...p, active_days: newActiveDays, day_hours: newDayHours };
+  });
+
+  const updateDayHours = (day, field, value) => setForm((p) => ({
+    ...p,
+    day_hours: {
+      ...p.day_hours,
+      [day]: { ...(p.day_hours[day] || defaultDayHours()), [field]: value },
+    },
   }));
 
   const addShiftType = () => setForm((p) => ({
@@ -142,29 +172,43 @@ export default function ClinicFormDialog({ open, onOpenChange, onSave, clinic })
             </div>
 
             <div className="space-y-2">
-              <Label>ימי פעילות</Label>
-              <div className="flex gap-1.5 flex-wrap">
-                {DAYS.map((day, i) => (
-                  <Button
-                    key={i} type="button" size="sm"
-                    variant={form.active_days.includes(i) ? "default" : "outline"}
-                    className="flex-1 min-w-[60px] text-xs"
-                    onClick={() => toggleDay(i)}
-                  >
-                    {day}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+              <Label>ימי פעילות ושעות</Label>
               <div className="space-y-2">
-                <Label>שעת פתיחה</Label>
-                <Input type="time" value={form.open_time} onChange={(e) => setField("open_time", e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>שעת סגירה</Label>
-                <Input type="time" value={form.close_time} onChange={(e) => setField("close_time", e.target.value)} />
+                {DAYS.map((dayName, i) => {
+                  const isActive = form.active_days.includes(i);
+                  const hours = form.day_hours?.[i] || defaultDayHours();
+                  return (
+                    <div key={i} className={`flex items-center gap-3 rounded-lg border px-3 py-2 transition-colors ${isActive ? "bg-primary/5 border-primary/30" : "bg-muted/30 border-border"}`}>
+                      <button
+                        type="button"
+                        onClick={() => toggleDay(i)}
+                        className={`w-16 text-xs font-medium py-1 rounded-md transition-colors flex-shrink-0 ${isActive ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground border border-input"}`}
+                      >
+                        {dayName}
+                      </button>
+                      {isActive ? (
+                        <div className="flex items-center gap-2 flex-1">
+                          <span className="text-xs text-muted-foreground flex-shrink-0">פתיחה</span>
+                          <Input
+                            type="time"
+                            className="h-7 text-xs flex-1 min-w-0"
+                            value={hours.open_time}
+                            onChange={(e) => updateDayHours(i, "open_time", e.target.value)}
+                          />
+                          <span className="text-xs text-muted-foreground flex-shrink-0">סגירה</span>
+                          <Input
+                            type="time"
+                            className="h-7 text-xs flex-1 min-w-0"
+                            value={hours.close_time}
+                            onChange={(e) => updateDayHours(i, "close_time", e.target.value)}
+                          />
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">יום סגור</span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </TabsContent>
