@@ -6,7 +6,7 @@ import { getIsraeliHolidays, getHolidayEves } from "@/lib/israeliHolidays";
 const DAY_NAMES_SHORT = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
 
 function getDayOpenHours(clinic, dow) {
-  const dayH = clinic.day_hours?.[dow] || clinic.day_hours?.[String(dow)];
+  const dayH = clinic.day_hours?.[String(dow)] || clinic.day_hours?.[dow];
   const openTime = dayH?.open_time || clinic.open_time || "09:00";
   const closeTime = dayH?.close_time || clinic.close_time || "20:00";
   return { openTime, closeTime };
