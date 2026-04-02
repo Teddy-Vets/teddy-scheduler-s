@@ -138,9 +138,9 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
                 <Select value={form.staff_role} onValueChange={(v) => setForm({ ...form, staff_role: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="vet">🩺 וטרינר</SelectItem>
-                    <SelectItem value="tech">🔧 טכנאי</SelectItem>
-                    <SelectItem value="receptionist">📞 קבלן/ית</SelectItem>
+                    <SelectItem value="vet">וטרינר</SelectItem>
+                    <SelectItem value="tech">טכנאי</SelectItem>
+                    <SelectItem value="receptionist">קבלה</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
