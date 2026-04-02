@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const navItems = [
-  { path: "/", label: "דאשבורד", icon: LayoutDashboard },
+  { path: "/", label: "דשבורד", icon: LayoutDashboard },
   { path: "/shifts", label: "לוח שיבוץ", icon: Calendar },
   { path: "/staff", label: "צוות", icon: Users },
   { path: "/clinics", label: "מרפאות", icon: Building2 },
