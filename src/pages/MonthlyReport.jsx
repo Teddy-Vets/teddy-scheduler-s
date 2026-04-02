@@ -25,8 +25,13 @@ function calcPlannedHours(clinic, monthDate) {
   const activeDays = (clinic.active_days || []).map(Number);
   const shiftTypes = clinic.shift_types || [];
 
-  // per-role total hours
-  const totals = { vet: 0, tech: 0, receptionist: 0 };
+  // clinic open hours per day
+  const [oh, om] = (clinic.open_time || "08:00").split(":").map(Number);
+  const [ch, cm] = (clinic.close_time || "20:00").split(":").map(Number);
+  const openHoursPerDay = ((ch * 60 + cm) - (oh * 60 + om)) / 60;
+
+  // per-role total hours + clinic open hours
+  const totals = { vet: 0, tech: 0, receptionist: 0, clinicOpen: 0, workDays: 0 };
 
   for (let d = 1; d <= daysInMonth; d++) {
     const date = new Date(year, month, d);
@@ -43,11 +48,12 @@ function calcPlannedHours(clinic, monthDate) {
     const isEve = eves.has(dateStr);
     const effectiveDow = isEve ? 5 : dow;
 
+    totals.workDays += 1;
+    totals.clinicOpen += openHoursPerDay;
+
     for (const st of shiftTypes) {
       const specificDays = (st.specific_days || []).map(Number);
-      // If shift has specific days defined, it only runs on those days
       if (specificDays.length > 0 && !specificDays.includes(effectiveDow)) continue;
-      // If no specific days, it runs every active day
       const required = st.required_staff || {};
       const [sh, sm] = (st.start_time || "00:00").split(":").map(Number);
       const [eh, em] = (st.end_time || "00:00").split(":").map(Number);
@@ -148,7 +154,8 @@ export default function MonthlyReport() {
           <thead>
             <tr className="bg-muted/60 border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
               <th className="text-right px-4 py-3 font-semibold">מרפאה</th>
-              <th className="text-center px-4 py-3 font-semibold">סה״כ שעות</th>
+              <th className="text-center px-4 py-3 font-semibold">שעות פעילות מרפאה</th>
+              <th className="text-center px-4 py-3 font-semibold">סה״כ שעות צוות</th>
               <th className="text-center px-4 py-3 font-semibold">וטרינרים</th>
               <th className="text-center px-4 py-3 font-semibold">טכנאים</th>
               <th className="text-center px-4 py-3 font-semibold">קבלה</th>
@@ -159,6 +166,10 @@ export default function MonthlyReport() {
             {rows.map(({ clinic, hours, notes }, i) => (
               <tr key={clinic.id} className={`border-b border-border last:border-0 ${i % 2 !== 0 ? "bg-muted/20" : ""}`}>
                 <td className="px-4 py-3 font-medium">{clinic.name}</td>
+                <td className="px-4 py-3 text-center font-semibold text-foreground">
+                  {h(hours.clinicOpen)}
+                  <div className="text-[10px] text-muted-foreground font-normal">{hours.workDays} ימי עבודה</div>
+                </td>
                 <td className="px-4 py-3 text-center font-semibold">{h(hours.total)}</td>
                 <td className="px-4 py-3 text-center text-primary font-medium">{h(hours.vet)}</td>
                 <td className="px-4 py-3 text-center text-blue-600 font-medium">{h(hours.tech)}</td>
