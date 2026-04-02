@@ -28,26 +28,19 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick }) {
         const dateStr = format(day, "yyyy-MM-dd");
         const dayShifts = shifts.filter((s) => s.date === dateStr);
 
-        // Sort shifts: vets first, then techs, within each role by start_time
-        const vets = dayShifts.filter(s => {
-          const member = staffMap[s.staff_id];
-          const role = member?.staff_role || s.staff_role;
-          return role === "vet" || role === "veterinarian";
-        }).sort((a, b) => (a.start_time || "00:00").localeCompare(b.start_time || "00:00"));
-
-        const techs = dayShifts.filter(s => {
-          const member = staffMap[s.staff_id];
-          const role = member?.staff_role || s.staff_role;
-          return role === "tech" || role === "technician";
-        }).sort((a, b) => (a.start_time || "00:00").localeCompare(b.start_time || "00:00"));
-
-        const others = dayShifts.filter(s => {
-          const member = staffMap[s.staff_id];
-          const role = member?.staff_role || s.staff_role;
-          return role !== "vet" && role !== "veterinarian" && role !== "tech" && role !== "technician";
-        }).sort((a, b) => (a.start_time || "00:00").localeCompare(b.start_time || "00:00"));
-
-        const sortedShifts = [...vets, ...techs, ...others];
+        // group by shift_type_name then list staff, sorted by start_time
+        const byShiftType = {};
+        dayShifts.forEach((s) => {
+          const key = s.shift_type_name || "כללי";
+          if (!byShiftType[key]) byShiftType[key] = [];
+          byShiftType[key].push(s);
+        });
+        // Sort shift types by their earliest start_time
+        const sortedEntries = Object.entries(byShiftType).sort(([, aShifts], [, bShifts]) => {
+          const aTime = aShifts[0]?.start_time || "00:00";
+          const bTime = bShifts[0]?.start_time || "00:00";
+          return aTime.localeCompare(bTime);
+        });
 
         return (
           <div
@@ -71,7 +64,12 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick }) {
 
             {/* Shifts */}
             <div className="flex flex-col gap-1.5 p-1.5 flex-1">
-              {sortedShifts.map((shift) => {
+              {sortedEntries.map(([typeName, typeShifts]) => (
+                <div key={typeName} className="space-y-1">
+                  <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide px-1">
+                    {typeName}
+                  </div>
+                  {typeShifts.map((shift) => {
                     const member = staffMap[shift.staff_id];
                     const role = member?.staff_role || shift.staff_role;
                     const color = getShiftColor(shift, role);
@@ -95,6 +93,8 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick }) {
                       </button>
                     );
                   })}
+                </div>
+              ))}
 
               {dayShifts.length === 0 && (
                 <div className="flex-1 flex items-center justify-center text-[10px] text-muted-foreground py-4">
