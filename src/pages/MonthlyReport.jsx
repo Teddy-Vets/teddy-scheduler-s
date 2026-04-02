@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { format, addMonths, getDaysInMonth, startOfMonth } from "date-fns";
 import { he } from "date-fns/locale";
 import { getIsraeliHolidays, getHolidayEves } from "@/lib/israeliHolidays";
@@ -22,6 +22,81 @@ function shiftDurationHours(st) {
   let mins = (eh * 60 + em) - (sh * 60 + sm);
   if (mins < 0) mins += 24 * 60;
   return mins / 60;
+}
+
+function calcPlannedHoursDetailed(clinic, monthDate) {
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const daysInMonth = getDaysInMonth(monthDate);
+  const holidays = getIsraeliHolidays(year);
+  const eves = getHolidayEves(year);
+  const activeDays = (clinic.active_days || []).map(Number);
+  const shiftTypes = clinic.shift_types || [];
+
+  const [oh, om] = (clinic.open_time || "08:00").split(":").map(Number);
+  const [ch, cm] = (clinic.close_time || "20:00").split(":").map(Number);
+  const openHoursPerDay = ((ch * 60 + cm) - (oh * 60 + om)) / 60;
+
+  const DAY_NAMES = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
+  const lines = [];
+  lines.push(`📅 חודש: ${format(monthDate, "MMMM yyyy", { locale: he })}`);
+  lines.push(`🕐 שעות פתיחה: ${clinic.open_time || "08:00"} – ${clinic.close_time || "20:00"} (${openHoursPerDay} שע׳/יום)`);
+  lines.push(`📋 ימי פעילות: ${activeDays.map(d => DAY_NAMES[d]).join(", ")}`);
+  lines.push(`🔧 סוגי משמרת: ${shiftTypes.map(st => `${st.name} (${st.start_time}-${st.end_time}, וטרינרים:${st.required_staff?.vet||0}, טכנאים:${st.required_staff?.tech||0})`).join(" | ")}`);
+  lines.push("─".repeat(60));
+
+  const totals = { vet: 0, tech: 0, clinicOpen: 0, workDays: 0 };
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(year, month, d);
+    const dateStr = format(date, "yyyy-MM-dd");
+    const dow = date.getDay();
+
+    if (!activeDays.includes(dow)) continue;
+
+    if (holidays.has(dateStr)) {
+      lines.push(`❌ ${dateStr} (${DAY_NAMES[dow]}) — חג, מדולג`);
+      continue;
+    }
+
+    const isEve = eves.has(dateStr);
+    const effectiveDow = isEve ? 5 : dow;
+
+    totals.workDays += 1;
+    totals.clinicOpen += openHoursPerDay;
+
+    let dayVet = 0, dayTech = 0;
+    const shiftDetails = [];
+
+    for (const st of shiftTypes) {
+      const specificDays = (st.specific_days || []).map(Number);
+      if (specificDays.length > 0 && !specificDays.includes(effectiveDow)) {
+        shiftDetails.push(`  ↳ ${st.name}: מדולג (ספציפי לימים: ${specificDays.map(x => DAY_NAMES[x]).join(",")})`);
+        continue;
+      }
+      const hours = shiftDurationHours(st);
+      const vetCount = parseInt(st.required_staff?.vet) || 0;
+      const techCount = parseInt(st.required_staff?.tech) || 0;
+      dayVet += vetCount * hours;
+      dayTech += techCount * hours;
+      shiftDetails.push(`  ↳ ${st.name} (${st.start_time}-${st.end_time} = ${hours}שע׳): וטרינרים ${vetCount}×${hours}=${vetCount*hours}, טכנאים ${techCount}×${hours}=${techCount*hours}`);
+    }
+
+    totals.vet += dayVet;
+    totals.tech += dayTech;
+
+    const eveTag = isEve ? " [ערב חג → כיום שישי]" : "";
+    lines.push(`✅ ${dateStr} (${DAY_NAMES[dow]})${eveTag} — פתיחה: ${openHoursPerDay}שע׳, וטרינרים: ${dayVet}שע׳, טכנאים: ${dayTech}שע׳`);
+    shiftDetails.forEach(l => lines.push(l));
+  }
+
+  lines.push("─".repeat(60));
+  lines.push(`📊 סיכום: ${totals.workDays} ימי עבודה`);
+  lines.push(`   שעות פתיחה: ${totals.workDays} × ${openHoursPerDay} = ${totals.clinicOpen} שע׳`);
+  lines.push(`   שעות וטרינרים: ${totals.vet} שע׳`);
+  lines.push(`   שעות טכנאים: ${totals.tech} שע׳`);
+
+  return { totals, lines };
 }
 
 function calcPlannedHours(clinic, monthDate) {
@@ -107,12 +182,18 @@ const h = (val) => Math.round(val) > 0 ? `${Math.round(val)} שע׳` : "—";
 
 export default function MonthlyReport() {
   const [monthOffset, setMonthOffset] = useState(0);
+  const [debugClinic, setDebugClinic] = useState(null);
   const targetMonth = addMonths(new Date(), monthOffset);
   const monthStr = format(targetMonth, "yyyy-MM");
   const monthLabel = format(targetMonth, "MMMM yyyy", { locale: he });
 
   const { data: clinics = [] } = useQuery({ queryKey: ["clinics"], queryFn: () => base44.entities.Clinic.list() });
   const { data: staff = [] } = useQuery({ queryKey: ["staff"], queryFn: () => base44.entities.Staff.list() });
+
+  const debugData = useMemo(() => {
+    if (!debugClinic) return null;
+    return calcPlannedHoursDetailed(debugClinic, startOfMonth(targetMonth));
+  }, [debugClinic, targetMonth]);
 
   const rows = useMemo(() => {
     return clinics
@@ -159,32 +240,51 @@ export default function MonthlyReport() {
           </thead>
           <tbody>
             {rows.map(({ clinic, hours, notes }, i) => (
-              <tr key={clinic.id} className={`border-b border-border last:border-0 ${i % 2 !== 0 ? "bg-muted/20" : ""}`}>
-                <td className="px-4 py-3 font-medium">{clinic.name}</td>
-                <td className="px-4 py-3 text-center font-semibold text-foreground">
-                  {h(hours.clinicOpen)}
-                  <div className="text-[10px] text-muted-foreground font-normal">{hours.workDays} ימי עבודה</div>
-                </td>
-                <td className="px-4 py-3 text-center text-primary font-semibold">{h(hours.vet)}</td>
-                <td className="px-4 py-3 text-center text-blue-600 font-semibold">{h(hours.tech)}</td>
-                <td className="px-4 py-3 min-w-[220px]">
-                  {notes.length === 0 ? (
-                    <span className="text-muted-foreground text-xs">—</span>
-                  ) : (
-                    <div className="flex flex-col gap-1">
-                      {notes.map((n, j) => (
-                        <div key={j} className={`flex items-start gap-1.5 text-xs ${
-                          n.level === "error" ? "text-destructive" :
-                          n.level === "warning" ? "text-amber-700" : "text-muted-foreground"
-                        }`}>
-                          {n.level !== "info" && <AlertTriangle className="w-3 h-3 flex-shrink-0 mt-0.5" />}
-                          {n.text}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </td>
-              </tr>
+              <React.Fragment key={clinic.id}>
+                <tr className={`border-b border-border ${i % 2 !== 0 ? "bg-muted/20" : ""}`}>
+                  <td className="px-4 py-3 font-medium">
+                    <button
+                      onClick={() => setDebugClinic(debugClinic?.id === clinic.id ? null : clinic)}
+                      className="flex items-center gap-1 hover:text-primary transition-colors text-right"
+                    >
+                      {clinic.name}
+                      {debugClinic?.id === clinic.id ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
+                    </button>
+                  </td>
+                  <td className="px-4 py-3 text-center font-semibold text-foreground">
+                    {h(hours.clinicOpen)}
+                    <div className="text-[10px] text-muted-foreground font-normal">{hours.workDays} ימי עבודה</div>
+                  </td>
+                  <td className="px-4 py-3 text-center text-primary font-semibold">{h(hours.vet)}</td>
+                  <td className="px-4 py-3 text-center text-blue-600 font-semibold">{h(hours.tech)}</td>
+                  <td className="px-4 py-3 min-w-[220px]">
+                    {notes.length === 0 ? (
+                      <span className="text-muted-foreground text-xs">—</span>
+                    ) : (
+                      <div className="flex flex-col gap-1">
+                        {notes.map((n, j) => (
+                          <div key={j} className={`flex items-start gap-1.5 text-xs ${
+                            n.level === "error" ? "text-destructive" :
+                            n.level === "warning" ? "text-amber-700" : "text-muted-foreground"
+                          }`}>
+                            {n.level !== "info" && <AlertTriangle className="w-3 h-3 flex-shrink-0 mt-0.5" />}
+                            {n.text}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </td>
+                </tr>
+                {debugClinic?.id === clinic.id && debugData && (
+                  <tr className="bg-slate-50 border-b border-border">
+                    <td colSpan={5} className="px-4 py-3">
+                      <div className="text-xs font-mono bg-slate-900 text-green-300 rounded-lg p-4 max-h-96 overflow-y-auto whitespace-pre leading-5 text-right" dir="rtl">
+                        {debugData.lines.join("\n")}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
             ))}
             {rows.length === 0 && (
               <tr>
