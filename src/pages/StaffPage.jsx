@@ -18,7 +18,7 @@ const ROLE_COLORS = {
   tech: "bg-blue-100 text-blue-700 border-blue-200",
   receptionist: "bg-amber-100 text-amber-700 border-amber-200",
 };
-const ROLE_LABELS = { vet: "🩺 וטרינר", tech: "🔧 טכנאי", receptionist: "📞 קבלן/ית" };
+const ROLE_LABELS = { vet: "🩺 וטרינר", tech: "טכנאי", receptionist: "📞 קבלן/ית" };
 const DAYS_SHORT = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
 
 export default function StaffPage() {
