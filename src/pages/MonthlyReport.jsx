@@ -2,19 +2,105 @@ import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { AlertTriangle } from "lucide-react";
-import { format, addMonths } from "date-fns";
+import { format, addMonths, getDaysInMonth, startOfMonth } from "date-fns";
 import { he } from "date-fns/locale";
+import { getIsraeliHolidays, getHolidayEves } from "@/lib/israeliHolidays";
 
-function shiftHours(start, end) {
-  if (!start || !end) return 0;
-  const [sh, sm] = start.split(":").map(Number);
-  const [eh, em] = end.split(":").map(Number);
-  let mins = (eh * 60 + em) - (sh * 60 + sm);
-  if (mins < 0) mins += 24 * 60;
-  return mins / 60;
+/**
+ * For a given clinic and month, calculate the PLANNED hours
+ * based on shift_types, active_days, holidays, and holiday eves.
+ *
+ * Holiday eve days: only "Friday" shifts (specific_days includes 5) run on that day,
+ * OR the first applicable shift type runs as a half-day.
+ * For simplicity: on a holiday eve, only shift types whose specific_days include
+ * Friday (5) are counted (treating the eve like a Friday).
+ */
+function calcPlannedHours(clinic, monthDate) {
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth(); // 0-based
+  const daysInMonth = getDaysInMonth(monthDate);
+  const holidays = getIsraeliHolidays(year);
+  const eves = getHolidayEves(year);
+  const activeDays = (clinic.active_days || []).map(Number);
+  const shiftTypes = clinic.shift_types || [];
+
+  // per-role total hours
+  const totals = { vet: 0, tech: 0, receptionist: 0 };
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(year, month, d);
+    const dateStr = format(date, "yyyy-MM-dd");
+    const dow = date.getDay(); // 0=Sun … 6=Sat
+
+    // Skip if not an active day for this clinic
+    if (!activeDays.includes(dow)) continue;
+
+    // Skip public holidays
+    if (holidays.has(dateStr)) continue;
+
+    // Is this a holiday eve? Treat like a Friday.
+    const isEve = eves.has(dateStr);
+    const effectiveDow = isEve ? 5 : dow;
+
+    for (const st of shiftTypes) {
+      const specificDays = (st.specific_days || []).map(Number);
+      // If shift has specific days defined, it only runs on those days
+      if (specificDays.length > 0 && !specificDays.includes(effectiveDow)) continue;
+      // If no specific days, it runs every active day
+      const required = st.required_staff || {};
+      const [sh, sm] = (st.start_time || "00:00").split(":").map(Number);
+      const [eh, em] = (st.end_time || "00:00").split(":").map(Number);
+      let mins = (eh * 60 + em) - (sh * 60 + sm);
+      if (mins < 0) mins += 24 * 60;
+      const hours = mins / 60;
+
+      for (const role of ["vet", "tech", "receptionist"]) {
+        const count = parseInt(required[role]) || 0;
+        totals[role] += count * hours;
+      }
+    }
+  }
+
+  totals.total = totals.vet + totals.tech + totals.receptionist;
+  return totals;
 }
+
+function buildNotes(clinic, staff, monthStr) {
+  const notes = [];
+  const clinicStaff = staff.filter(
+    (s) => s.assigned_clinic_ids?.includes(clinic.id) && s.status !== "inactive"
+  );
+
+  for (const role of ["vet", "tech", "receptionist"]) {
+    const roleLabels = { vet: "וטרינרים", tech: "טכנאים", receptionist: "קבלה" };
+    if (!clinic.shift_types) continue;
+    const needed = Math.max(...clinic.shift_types.map((st) => parseInt(st.required_staff?.[role]) || 0));
+    if (needed === 0) continue;
+    const available = clinicStaff.filter((s) => s.staff_role === role).length;
+    if (available < needed) {
+      notes.push({ level: "error", text: `מחסור ב${roleLabels[role]}: ${available} מתוך ${needed} נדרשים` });
+    } else if (available < needed * 2) {
+      notes.push({ level: "warning", text: `מעט ${roleLabels[role]}: ${available} (מינימום מומלץ ${needed * 2})` });
+    }
+  }
+
+  for (const member of clinicStaff) {
+    for (const abs of member.absences || []) {
+      if (!abs.start_date || !abs.end_date) continue;
+      const absMonth = abs.start_date.slice(0, 7);
+      const absEndMonth = abs.end_date.slice(0, 7);
+      if (absMonth === monthStr || absEndMonth === monthStr ||
+        (abs.start_date < monthStr + "-01" && abs.end_date >= monthStr + "-01")) {
+        notes.push({ level: "info", text: `${member.name} בהיעדרות (${abs.start_date} – ${abs.end_date})` });
+      }
+    }
+  }
+
+  return notes;
+}
+
+const h = (val) => Math.round(val) > 0 ? `${Math.round(val)} שע׳` : "—";
 
 export default function MonthlyReport() {
   const [monthOffset, setMonthOffset] = useState(0);
@@ -24,61 +110,25 @@ export default function MonthlyReport() {
 
   const { data: clinics = [] } = useQuery({ queryKey: ["clinics"], queryFn: () => base44.entities.Clinic.list() });
   const { data: staff = [] } = useQuery({ queryKey: ["staff"], queryFn: () => base44.entities.Staff.list() });
-  const { data: shifts = [] } = useQuery({ queryKey: ["shifts"], queryFn: () => base44.entities.Shift.list() });
-
-  const monthShifts = useMemo(
-    () => shifts.filter((s) => s.date?.startsWith(monthStr) && s.status !== "cancelled"),
-    [shifts, monthStr]
-  );
 
   const rows = useMemo(() => {
-    return clinics.map((clinic) => {
-      const cs = monthShifts.filter((s) => s.clinic_id === clinic.id);
-
-      const totalHours = cs.reduce((sum, s) => sum + shiftHours(s.start_time, s.end_time), 0);
-      const vetHours = cs.filter((s) => s.staff_role === "vet").reduce((sum, s) => sum + shiftHours(s.start_time, s.end_time), 0);
-      const techHours = cs.filter((s) => s.staff_role === "tech").reduce((sum, s) => sum + shiftHours(s.start_time, s.end_time), 0);
-      const recHours = cs.filter((s) => s.staff_role === "receptionist").reduce((sum, s) => sum + shiftHours(s.start_time, s.end_time), 0);
-
-      // Challenges
-      const notes = [];
-      const clinicStaff = staff.filter((s) => s.assigned_clinic_ids?.includes(clinic.id) && s.status !== "inactive");
-
-      // Staff shortage per role
-      for (const role of ["vet", "tech", "receptionist"]) {
-        const roleLabels = { vet: "וטרינרים", tech: "טכנאים", receptionist: "קבלה" };
-        if (!clinic.shift_types) continue;
-        const needed = Math.max(...clinic.shift_types.map((st) => parseInt(st.required_staff?.[role]) || 0));
-        if (needed === 0) continue;
-        const available = clinicStaff.filter((s) => s.staff_role === role).length;
-        if (available < needed * 2) {
-          notes.push({ level: available < needed ? "error" : "warning", text: `מחסור ב${roleLabels[role]} (${available}/${needed * 2} מינימום)` });
-        }
-      }
-
-      // Absences this month
-      for (const member of clinicStaff) {
-        for (const abs of member.absences || []) {
-          if (!abs.start_date || !abs.end_date) continue;
-          if (abs.start_date.startsWith(monthStr) || abs.end_date.startsWith(monthStr) ||
-            (abs.start_date < monthStr + "-01" && abs.end_date > monthStr + "-31")) {
-            notes.push({ level: "info", text: `${member.name} בהיעדרות` });
-          }
-        }
-      }
-
-      return { clinic, totalHours, vetHours, techHours, recHours, notes };
-    });
-  }, [clinics, staff, monthShifts, monthStr]);
-
-  const h = (val) => val > 0 ? `${Math.round(val)}` : "—";
+    return clinics
+      .filter((c) => c.status !== "inactive")
+      .map((clinic) => {
+        const hours = calcPlannedHours(clinic, startOfMonth(targetMonth));
+        const notes = buildNotes(clinic, staff, monthStr);
+        return { clinic, hours, notes };
+      });
+  }, [clinics, staff, monthStr, targetMonth]);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold">דו״ח חודשי</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">{monthLabel}</p>
+          <h1 className="text-2xl font-bold">דו״ח תכנון חודשי</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">
+            שעות פעילות צפויות לפי הגדרות מרפאה, בניכוי חגים — {monthLabel}
+          </p>
         </div>
         <Select value={String(monthOffset)} onValueChange={(v) => setMonthOffset(Number(v))}>
           <SelectTrigger className="w-44">
@@ -94,7 +144,7 @@ export default function MonthlyReport() {
       </div>
 
       <div className="rounded-xl border border-border shadow-sm overflow-x-auto">
-        <table className="w-full min-w-[700px] text-sm">
+        <table className="w-full min-w-[760px] text-sm">
           <thead>
             <tr className="bg-muted/60 border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
               <th className="text-right px-4 py-3 font-semibold">מרפאה</th>
@@ -106,24 +156,24 @@ export default function MonthlyReport() {
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ clinic, totalHours, vetHours, techHours, recHours, notes }, i) => (
-              <tr key={clinic.id} className={`border-b border-border last:border-0 ${i % 2 === 0 ? "" : "bg-muted/20"}`}>
+            {rows.map(({ clinic, hours, notes }, i) => (
+              <tr key={clinic.id} className={`border-b border-border last:border-0 ${i % 2 !== 0 ? "bg-muted/20" : ""}`}>
                 <td className="px-4 py-3 font-medium">{clinic.name}</td>
-                <td className="px-4 py-3 text-center font-semibold">{h(totalHours)}</td>
-                <td className="px-4 py-3 text-center text-primary font-medium">{h(vetHours)}</td>
-                <td className="px-4 py-3 text-center text-blue-600 font-medium">{h(techHours)}</td>
-                <td className="px-4 py-3 text-center text-amber-600 font-medium">{h(recHours)}</td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 text-center font-semibold">{h(hours.total)}</td>
+                <td className="px-4 py-3 text-center text-primary font-medium">{h(hours.vet)}</td>
+                <td className="px-4 py-3 text-center text-blue-600 font-medium">{h(hours.tech)}</td>
+                <td className="px-4 py-3 text-center text-amber-600 font-medium">{h(hours.receptionist)}</td>
+                <td className="px-4 py-3 min-w-[220px]">
                   {notes.length === 0 ? (
                     <span className="text-muted-foreground text-xs">—</span>
                   ) : (
                     <div className="flex flex-col gap-1">
                       {notes.map((n, j) => (
-                        <div key={j} className={`flex items-center gap-1.5 text-xs ${
+                        <div key={j} className={`flex items-start gap-1.5 text-xs ${
                           n.level === "error" ? "text-destructive" :
                           n.level === "warning" ? "text-amber-700" : "text-muted-foreground"
                         }`}>
-                          {n.level !== "info" && <AlertTriangle className="w-3 h-3 flex-shrink-0" />}
+                          {n.level !== "info" && <AlertTriangle className="w-3 h-3 flex-shrink-0 mt-0.5" />}
                           {n.text}
                         </div>
                       ))}
@@ -134,12 +184,16 @@ export default function MonthlyReport() {
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={6} className="text-center py-10 text-muted-foreground">אין נתונים</td>
+                <td colSpan={6} className="text-center py-10 text-muted-foreground">אין מרפאות פעילות</td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+
+      <p className="text-xs text-muted-foreground">
+        * החישוב מבוסס על ימי פעילות, סוגי משמרת וכמות צוות נדרשת לפי הגדרות המרפאה, בניכוי חגים ישראליים וערבי חג.
+      </p>
     </div>
   );
 }
