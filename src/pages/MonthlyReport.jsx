@@ -1,11 +1,13 @@
 import React, { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronUp, Edit2 } from "lucide-react";
 import { format, addMonths, getDaysInMonth, startOfMonth } from "date-fns";
 import { he } from "date-fns/locale";
 import { getIsraeliHolidays, getHolidayEves } from "@/lib/israeliHolidays";
+import DayOverrideDialog from "@/components/monthlyReport/DayOverrideDialog";
+import { Button } from "@/components/ui/button";
 
 /**
  * For a given clinic and month, calculate the PLANNED hours
@@ -184,12 +186,18 @@ const DAY_NAMES_SHORT = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"]
 const DAY_NAMES_FULL = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
 
 /** Build a day-by-day grid for the month: for each date, which clinics are open and what hours */
-function buildDailyGrid(clinics, monthDate) {
+function buildDailyGrid(clinics, monthDate, overrides) {
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
   const daysInMonth = getDaysInMonth(monthDate);
   const holidays = getIsraeliHolidays(year);
   const eves = getHolidayEves(year);
+
+  // Build override map: clinicId + dateStr -> override
+  const overrideMap = {};
+  (overrides || []).forEach((ov) => {
+    overrideMap[`${ov.clinic_id}__${ov.date}`] = ov;
+  });
 
   const days = [];
   for (let d = 1; d <= daysInMonth; d++) {
@@ -202,6 +210,13 @@ function buildDailyGrid(clinics, monthDate) {
 
     const clinicHours = clinics.map(clinic => {
       const activeDays = (clinic.active_days || []).map(Number);
+      const override = overrideMap[`${clinic.id}__${dateStr}`];
+
+      if (override && override.is_closed) return null;
+      if (override) {
+        return { openTime: override.open_time, closeTime: override.close_time };
+      }
+
       if (!activeDays.includes(dow) || isHoliday) return null;
       const { openTime, closeTime } = getDayOpenHours(clinic, effectiveDow);
       return { openTime, closeTime };
@@ -217,12 +232,39 @@ const h = (val) => Math.round(val) > 0 ? `${Math.round(val)} שע׳` : "—";
 export default function MonthlyReport() {
   const [monthOffset, setMonthOffset] = useState(0);
   const [debugClinic, setDebugClinic] = useState(null);
+  const [overrideDialog, setOverrideDialog] = useState({ open: false, clinic: null, date: null });
+  const queryClient = useQueryClient();
   const targetMonth = addMonths(new Date(), monthOffset);
   const monthStr = format(targetMonth, "yyyy-MM");
   const monthLabel = format(targetMonth, "MMMM yyyy", { locale: he });
 
   const { data: clinics = [] } = useQuery({ queryKey: ["clinics"], queryFn: () => base44.entities.Clinic.list() });
   const { data: staff = [] } = useQuery({ queryKey: ["staff"], queryFn: () => base44.entities.Staff.list() });
+  const { data: overrides = [] } = useQuery({ queryKey: ["clinicDayOverrides"], queryFn: () => base44.entities.ClinicDayOverride.list() });
+
+  const createOverrideMutation = useMutation({
+    mutationFn: (data) => base44.entities.ClinicDayOverride.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clinicDayOverrides"] });
+      setOverrideDialog({ open: false, clinic: null, date: null });
+    },
+  });
+
+  const updateOverrideMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.ClinicDayOverride.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clinicDayOverrides"] });
+      setOverrideDialog({ open: false, clinic: null, date: null });
+    },
+  });
+
+  const deleteOverrideMutation = useMutation({
+    mutationFn: (id) => base44.entities.ClinicDayOverride.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clinicDayOverrides"] });
+      setOverrideDialog({ open: false, clinic: null, date: null });
+    },
+  });
 
   const debugData = useMemo(() => {
     if (!debugClinic) return null;
@@ -240,7 +282,29 @@ export default function MonthlyReport() {
   }, [clinics, staff, monthStr, targetMonth]);
 
   const activeClinics = useMemo(() => clinics.filter(c => c.status !== "inactive"), [clinics]);
-  const dailyGrid = useMemo(() => buildDailyGrid(activeClinics, startOfMonth(targetMonth)), [activeClinics, targetMonth]);
+  const dailyGrid = useMemo(() => buildDailyGrid(activeClinics, startOfMonth(targetMonth), overrides), [activeClinics, targetMonth, overrides]);
+
+  const handleOpenOverride = (clinic, dateStr) => {
+    const existing = overrides.find((o) => o.clinic_id === clinic.id && o.date === dateStr);
+    setOverrideDialog({ open: true, clinic, date: dateStr, existing });
+  };
+
+  const handleSaveOverride = (data) => {
+    if (overrideDialog.existing) {
+      updateOverrideMutation.mutate({ id: overrideDialog.existing.id, data });
+    } else {
+      createOverrideMutation.mutate({
+        clinic_id: overrideDialog.clinic.id,
+        clinic_name: overrideDialog.clinic.name,
+        date: overrideDialog.date,
+        ...data,
+      });
+    }
+  };
+
+  const handleDeleteOverride = (id) => {
+    deleteOverrideMutation.mutate(id);
+  };
 
   return (
     <div className="space-y-4">
@@ -355,15 +419,39 @@ export default function MonthlyReport() {
                     {isEve && !isHoliday && <span className="mr-1 text-amber-600 text-[9px]">ערב</span>}
                   </td>
                   <td className="px-3 py-1.5 text-center text-muted-foreground">{DAY_NAMES_SHORT[dow]}</td>
-                  {clinicHours.map((ch, ci) => (
-                    <td key={ci} className="px-3 py-1.5 text-center">
-                      {ch ? (
-                        <span className="font-medium text-foreground">{ch.openTime}–{ch.closeTime}</span>
-                      ) : (
-                        <span className="text-muted-foreground/40">—</span>
-                      )}
-                    </td>
-                  ))}
+                  {clinicHours.map((ch, ci) => {
+                    const override = overrides.find((o) => o.clinic_id === activeClinics[ci].id && o.date === dateStr);
+                    return (
+                      <td key={ci} className="px-3 py-1.5 text-center group">
+                        {ch ? (
+                          <div className="flex items-center justify-center gap-1">
+                            <span className={`font-medium ${override ? "text-amber-700" : "text-foreground"}`}>
+                              {override && override.is_closed ? "סגור" : ch.openTime}
+                              {!override?.is_closed && ch.closeTime && `–${ch.closeTime}`}
+                            </span>
+                            <button
+                              onClick={() => handleOpenOverride(activeClinics[ci], dateStr)}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-muted"
+                              title="עריכת שעות"
+                            >
+                              <Edit2 className="w-3 h-3 text-muted-foreground" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center gap-1">
+                            <span className="text-muted-foreground/40">—</span>
+                            <button
+                              onClick={() => handleOpenOverride(activeClinics[ci], dateStr)}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-muted"
+                              title="הוסף שעות"
+                            >
+                              <Edit2 className="w-3 h-3 text-muted-foreground" />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>
@@ -374,6 +462,16 @@ export default function MonthlyReport() {
       <p className="text-xs text-muted-foreground">
         * החישוב מבוסס על ימי פעילות, סוגי משמרת וכמות צוות נדרשת לפי הגדרות המרפאה, בניכוי חגים ישראליים וערבי חג.
       </p>
+
+      <DayOverrideDialog
+        open={overrideDialog.open}
+        onOpenChange={(open) => setOverrideDialog((p) => ({ ...p, open }))}
+        onSave={handleSaveOverride}
+        onDelete={handleDeleteOverride}
+        override={overrideDialog.existing}
+        date={overrideDialog.date}
+        clinicName={overrideDialog.clinic?.name}
+      />
     </div>
   );
 }

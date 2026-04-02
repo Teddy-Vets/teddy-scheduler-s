@@ -1,0 +1,39 @@
+{
+  "name": "ClinicDayOverride",
+  "type": "object",
+  "properties": {
+    "clinic_id": {
+      "type": "string",
+      "description": "ID of the clinic"
+    },
+    "clinic_name": {
+      "type": "string",
+      "description": "Clinic name for display"
+    },
+    "date": {
+      "type": "string",
+      "description": "Specific date (YYYY-MM-DD format)"
+    },
+    "open_time": {
+      "type": "string",
+      "description": "Override opening time HH:MM"
+    },
+    "close_time": {
+      "type": "string",
+      "description": "Override closing time HH:MM"
+    },
+    "is_closed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Mark as closed/holiday instead of specific hours"
+    },
+    "note": {
+      "type": "string",
+      "description": "Reason for override (e.g., holiday eve, special event)"
+    }
+  },
+  "required": [
+    "clinic_id",
+    "date"
+  ]
+}
