@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard';
 import Shifts from './pages/Shifts';
 import StaffPage from './pages/StaffPage';
 import Clinics from './pages/Clinics';
+import MonthlyReport from './pages/MonthlyReport';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -42,6 +43,7 @@ const AuthenticatedApp = () => {
         <Route path="/shifts" element={<Shifts />} />
         <Route path="/staff" element={<StaffPage />} />
         <Route path="/clinics" element={<Clinics />} />
+        <Route path="/monthly-report" element={<MonthlyReport />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

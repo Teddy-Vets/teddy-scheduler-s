@@ -12,6 +12,7 @@ import {
   LogOut,
   Menu,
   X,
+  BarChart2,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ const navItems = [
   { path: "/shifts", label: "לוח שיבוץ", icon: Calendar },
   { path: "/staff", label: "צוות", icon: Users },
   { path: "/clinics", label: "מרפאות", icon: Building2 },
+  { path: "/monthly-report", label: "דו״ח חודשי", icon: BarChart2 },
 ];
 
 export default function Sidebar() {
