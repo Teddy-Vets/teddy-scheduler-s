@@ -68,7 +68,7 @@ export default function DailyHoursGrid({ clinics, monthOffset = 0 }) {
         <h3 className="font-semibold">שעות פעילות יומיות לפי מרפאה</h3>
         <p className="text-xs text-muted-foreground mt-0.5">{monthLabel}</p>
       </div>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
         <table className="text-xs min-w-max w-full">
           <thead>
             <tr className="bg-muted/50 border-b border-border text-muted-foreground">
@@ -103,12 +103,12 @@ export default function DailyHoursGrid({ clinics, monthOffset = 0 }) {
               </tr>
             ))}
           </tbody>
-          <tfoot>
-            <tr className="border-t-2 border-border bg-muted/60 font-semibold">
-              <td className="px-3 py-2.5 text-right sticky right-0 bg-muted/60 z-10">סה״כ</td>
-              <td className="px-2 py-2.5" />
+          <tfoot className="sticky bottom-0 z-20">
+            <tr className="border-t-2 border-border bg-muted font-semibold">
+              <td className="px-3 py-2.5 text-right sticky right-0 bg-muted z-10">סה״כ</td>
+              <td className="px-2 py-2.5 bg-muted" />
               {clinicTotals.map((total, ci) => (
-                <td key={ci} className="px-3 py-2.5 text-center text-primary font-bold">{total} שע׳</td>
+                <td key={ci} className="px-3 py-2.5 text-center text-primary font-bold bg-muted">{total} שע׳</td>
               ))}
             </tr>
           </tfoot>
