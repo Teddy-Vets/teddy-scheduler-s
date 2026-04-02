@@ -180,6 +180,38 @@ function buildNotes(clinic, staff, monthStr) {
   return notes;
 }
 
+const DAY_NAMES_SHORT = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
+const DAY_NAMES_FULL = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
+
+/** Build a day-by-day grid for the month: for each date, which clinics are open and what hours */
+function buildDailyGrid(clinics, monthDate) {
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const daysInMonth = getDaysInMonth(monthDate);
+  const holidays = getIsraeliHolidays(year);
+  const eves = getHolidayEves(year);
+
+  const days = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(year, month, d);
+    const dateStr = format(date, "yyyy-MM-dd");
+    const dow = date.getDay();
+    const isHoliday = holidays.has(dateStr);
+    const isEve = eves.has(dateStr);
+    const effectiveDow = isEve ? 5 : dow;
+
+    const clinicHours = clinics.map(clinic => {
+      const activeDays = (clinic.active_days || []).map(Number);
+      if (!activeDays.includes(dow) || isHoliday) return null;
+      const { openTime, closeTime } = getDayOpenHours(clinic, effectiveDow);
+      return { openTime, closeTime };
+    });
+
+    days.push({ d, dateStr, dow, isHoliday, isEve, effectiveDow, clinicHours });
+  }
+  return days;
+}
+
 const h = (val) => Math.round(val) > 0 ? `${Math.round(val)} שע׳` : "—";
 
 export default function MonthlyReport() {
@@ -206,6 +238,9 @@ export default function MonthlyReport() {
         return { clinic, hours, notes };
       });
   }, [clinics, staff, monthStr, targetMonth]);
+
+  const activeClinics = useMemo(() => clinics.filter(c => c.status !== "inactive"), [clinics]);
+  const dailyGrid = useMemo(() => buildDailyGrid(activeClinics, startOfMonth(targetMonth)), [activeClinics, targetMonth]);
 
   return (
     <div className="space-y-4">
@@ -295,6 +330,45 @@ export default function MonthlyReport() {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Daily hours grid */}
+      <div>
+        <h2 className="text-lg font-semibold mb-2">שעות פעילות יומיות לפי מרפאה</h2>
+        <div className="rounded-xl border border-border shadow-sm overflow-x-auto">
+          <table className="text-xs min-w-max w-full">
+            <thead>
+              <tr className="bg-muted/60 border-b border-border text-muted-foreground uppercase tracking-wide">
+                <th className="text-right px-3 py-2 font-semibold sticky right-0 bg-muted/60 z-10 min-w-[60px]">תאריך</th>
+                <th className="text-center px-3 py-2 font-semibold min-w-[30px]">יום</th>
+                {activeClinics.map(c => (
+                  <th key={c.id} className="text-center px-3 py-2 font-semibold min-w-[90px]">{c.name}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {dailyGrid.map(({ d, dateStr, dow, isHoliday, isEve, clinicHours }, i) => (
+                <tr key={dateStr} className={`border-b border-border ${i % 2 !== 0 ? "bg-muted/20" : ""} ${isHoliday ? "opacity-50" : ""}`}>
+                  <td className="px-3 py-1.5 font-medium text-right sticky right-0 bg-inherit z-10">
+                    {d}/{dateStr.slice(5, 7)}
+                    {isHoliday && <span className="mr-1 text-destructive text-[9px]">חג</span>}
+                    {isEve && !isHoliday && <span className="mr-1 text-amber-600 text-[9px]">ערב</span>}
+                  </td>
+                  <td className="px-3 py-1.5 text-center text-muted-foreground">{DAY_NAMES_SHORT[dow]}</td>
+                  {clinicHours.map((ch, ci) => (
+                    <td key={ci} className="px-3 py-1.5 text-center">
+                      {ch ? (
+                        <span className="font-medium text-foreground">{ch.openTime}–{ch.closeTime}</span>
+                      ) : (
+                        <span className="text-muted-foreground/40">—</span>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <p className="text-xs text-muted-foreground">
