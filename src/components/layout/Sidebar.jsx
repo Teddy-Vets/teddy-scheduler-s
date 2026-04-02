@@ -204,7 +204,7 @@ export default function Sidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="p-2 border-t border-sidebar-border space-y-1">
+        <div className="p-2 border-t border-sidebar-border space-y-1 relative z-[60]">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
