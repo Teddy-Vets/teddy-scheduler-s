@@ -75,7 +75,7 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick }) {
                         </div>
                         {member?.staff_role && (
                           <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 mt-0.5 border-current">
-                            {member.staff_role === "veterinarian" ? "וטרינר" : member.staff_role === "technician" ? "טכנאי" : "קבלה"}
+                            {member.staff_role === "vet" ? "וטרינר" : member.staff_role === "tech" ? "טכנאי" : "קבלה"}
                           </Badge>
                         )}
                       </button>

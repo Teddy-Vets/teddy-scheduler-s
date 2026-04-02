@@ -9,11 +9,11 @@ import { he } from "date-fns/locale";
 import { getShiftColor } from "../shifts/ScheduleBoard";
 
 const ROLE_COLORS = {
-  veterinarian: "bg-primary/10 text-primary border-primary/20",
-  technician: "bg-blue-100 text-blue-700 border-blue-200",
+  vet: "bg-primary/10 text-primary border-primary/20",
+  tech: "bg-blue-100 text-blue-700 border-blue-200",
   receptionist: "bg-amber-100 text-amber-700 border-amber-200",
 };
-const ROLE_LABELS = { veterinarian: "🩺 וטרינר", technician: "🔧 טכנאי", receptionist: "📞 קבלן/ית" };
+const ROLE_LABELS = { vet: "🩺 וטרינר", tech: "🔧 טכנאי", receptionist: "📞 קבלן/ית" };
 const ABSENCE_TYPE_COLORS = {
   vacation: "bg-blue-50 text-blue-700 border-blue-200",
   sick: "bg-red-50 text-red-700 border-red-200",

@@ -28,7 +28,7 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
 
   function defaultForm() {
     return {
-      name: "", staff_role: "veterinarian", email: "", phone: "",
+      name: "", staff_role: "vet", email: "", phone: "",
       hourly_rate: 0, assigned_clinic_ids: [], regular_days_off: [],
       preferred_shift_types: [], preferred_shifts_by_day: {}, absences: [], status: "active",
       max_fridays_per_month: null,
@@ -41,7 +41,7 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
     if (member) {
       setForm({
         name: member.name || "",
-        staff_role: member.staff_role || "veterinarian",
+        staff_role: member.staff_role || "vet",
         email: member.email || "",
         phone: member.phone || "",
         hourly_rate: member.hourly_rate || 0,
@@ -138,8 +138,8 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
                 <Select value={form.staff_role} onValueChange={(v) => setForm({ ...form, staff_role: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="veterinarian">🩺 וטרינר</SelectItem>
-                    <SelectItem value="technician">🔧 טכנאי</SelectItem>
+                    <SelectItem value="vet">🩺 וטרינר</SelectItem>
+                    <SelectItem value="tech">🔧 טכנאי</SelectItem>
                     <SelectItem value="receptionist">📞 קבלן/ית</SelectItem>
                   </SelectContent>
                 </Select>

@@ -6,14 +6,14 @@ import { Pencil, Trash2, Phone, Mail } from "lucide-react";
 import { motion } from "framer-motion";
 
 const roleColors = {
-  veterinarian: "bg-primary/10 text-primary",
-  technician: "bg-chart-3/10 text-chart-3",
+  vet: "bg-primary/10 text-primary",
+  tech: "bg-chart-3/10 text-chart-3",
   receptionist: "bg-accent/10 text-accent",
 };
 
 const roleBadgeIcons = {
-  veterinarian: "🩺",
-  technician: "🔧",
+  vet: "🩺",
+  tech: "🔧",
   receptionist: "📞",
 };
 

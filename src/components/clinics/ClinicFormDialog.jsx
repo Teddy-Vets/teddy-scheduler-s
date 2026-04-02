@@ -64,7 +64,7 @@ export default function ClinicFormDialog({ open, onOpenChange, onSave, clinic })
 
   const addShiftType = () => setForm((p) => ({
     ...p,
-    shift_types: [...p.shift_types, { id: generateId(), name: "", start_time: "08:00", end_time: "16:00", is_hard: false, specific_days: [], required_staff: { veterinarian: 1, technician: 1, receptionist: 0 } }],
+    shift_types: [...p.shift_types, { id: generateId(), name: "", start_time: "08:00", end_time: "16:00", is_hard: false, specific_days: [], required_staff: { vet: 1, tech: 1, receptionist: 0 } }],
   }));
 
   const toggleShiftDay = (idx, day) => setForm((p) => ({
@@ -235,8 +235,8 @@ export default function ClinicFormDialog({ open, onOpenChange, onSave, clinic })
                     <Label className="text-[10px] text-muted-foreground uppercase tracking-wide">כמות צוות נדרשת</Label>
                     <div className="grid grid-cols-3 gap-2">
                       {[
-                        { key: "veterinarian", label: "וטרינרים" },
-                        { key: "technician", label: "טכנאים" },
+                        { key: "vet", label: "וטרינרים" },
+                        { key: "tech", label: "טכנאים" },
                         { key: "receptionist", label: "קבלה" },
                       ].map(({ key, label }) => (
                         <div key={key} className="space-y-1">

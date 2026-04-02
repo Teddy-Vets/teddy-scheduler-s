@@ -169,7 +169,7 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs font-semibold truncate">{member.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{member.staff_role === "veterinarian" ? "וטרינר" : member.staff_role === "technician" ? "טכנאי" : "קבלן/ית"}</p>
+                      <p className="text-[10px] text-muted-foreground">{member.staff_role === "vet" ? "וטרינר" : member.staff_role === "tech" ? "טכנאי" : "קבלן/ית"}</p>
                     </div>
                   </div>
                 </td>

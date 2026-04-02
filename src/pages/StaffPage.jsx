@@ -14,11 +14,11 @@ import StaffFormDialog from "../components/staff/StaffFormDialog";
 import StaffDetailDrawer from "../components/staff/StaffDetailDrawer";
 
 const ROLE_COLORS = {
-  veterinarian: "bg-primary/10 text-primary border-primary/20",
-  technician: "bg-blue-100 text-blue-700 border-blue-200",
+  vet: "bg-primary/10 text-primary border-primary/20",
+  tech: "bg-blue-100 text-blue-700 border-blue-200",
   receptionist: "bg-amber-100 text-amber-700 border-amber-200",
 };
-const ROLE_LABELS = { veterinarian: "🩺 וטרינר", technician: "🔧 טכנאי", receptionist: "📞 קבלן/ית" };
+const ROLE_LABELS = { vet: "🩺 וטרינר", tech: "🔧 טכנאי", receptionist: "📞 קבלן/ית" };
 const DAYS_SHORT = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
 
 export default function StaffPage() {
@@ -104,8 +104,8 @@ export default function StaffPage() {
           <SelectTrigger className="w-[160px]"><SelectValue placeholder="כל התפקידים" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">כל התפקידים</SelectItem>
-            <SelectItem value="veterinarian">וטרינר</SelectItem>
-            <SelectItem value="technician">טכנאי</SelectItem>
+            <SelectItem value="vet">וטרינר</SelectItem>
+            <SelectItem value="tech">טכנאי</SelectItem>
             <SelectItem value="receptionist">קבלן/ית</SelectItem>
           </SelectContent>
         </Select>

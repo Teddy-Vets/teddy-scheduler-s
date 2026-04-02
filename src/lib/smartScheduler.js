@@ -186,7 +186,7 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
       // Build required slots per role from required_staff
       const requiredStaff = shiftType.required_staff || {};
       const roleSlots = [];
-      const roleOrder = ["veterinarian", "technician", "receptionist"];
+      const roleOrder = ["vet", "tech", "receptionist"];
       for (const role of roleOrder) {
         const count = parseInt(requiredStaff[role]) || 0;
         for (let i = 0; i < count; i++) {
@@ -290,7 +290,7 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
          });
 
         if (eligible.length === 0) {
-          const roleLabels = { veterinarian: "וטרינר", technician: "טכנאי", receptionist: "קבלן/ית" };
+          const roleLabels = { vet: "וטרינר", tech: "טכנאי", receptionist: "קבלן/ית" };
           const roleLabel = (targetRole && roleLabels[targetRole]) || "עובד כלשהו";
           const globalPool = [...existingShifts, ...newShifts];
           const candidatePool = clinicStaff.filter((m) => !targetRole || m.staff_role === targetRole);
