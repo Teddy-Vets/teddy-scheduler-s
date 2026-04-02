@@ -63,7 +63,7 @@ export default function DailyHoursGrid({ clinics, monthOffset = 0 }) {
   if (activeClinics.length === 0) return null;
 
   return (
-    <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
+    <div className="bg-card border rounded-xl shadow-sm">
       <div className="px-5 py-4 border-b">
         <h3 className="font-semibold">שעות פעילות יומיות לפי מרפאה</h3>
         <p className="text-xs text-muted-foreground mt-0.5">{monthLabel}</p>
@@ -102,14 +102,16 @@ export default function DailyHoursGrid({ clinics, monthOffset = 0 }) {
                 ))}
               </tr>
             ))}
-            <tr className="border-t-2 border-border bg-muted/50 font-semibold">
-              <td className="px-3 py-2 text-right sticky right-0 bg-muted/50 z-10">סה״כ</td>
-              <td className="px-2 py-2" />
+          </tbody>
+          <tfoot>
+            <tr className="border-t-2 border-border bg-muted/60 font-semibold">
+              <td className="px-3 py-2.5 text-right sticky right-0 bg-muted/60 z-10">סה״כ</td>
+              <td className="px-2 py-2.5" />
               {clinicTotals.map((total, ci) => (
-                <td key={ci} className="px-3 py-2 text-center text-primary">{total} שע׳</td>
+                <td key={ci} className="px-3 py-2.5 text-center text-primary font-bold">{total} שע׳</td>
               ))}
             </tr>
-          </tbody>
+          </tfoot>
         </table>
       </div>
     </div>
