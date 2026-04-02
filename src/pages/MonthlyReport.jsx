@@ -16,37 +16,38 @@ import { getIsraeliHolidays, getHolidayEves } from "@/lib/israeliHolidays";
  * For simplicity: on a holiday eve, only shift types whose specific_days include
  * Friday (5) are counted (treating the eve like a Friday).
  */
+function shiftDurationHours(st) {
+  const [sh, sm] = (st.start_time || "00:00").split(":").map(Number);
+  const [eh, em] = (st.end_time || "00:00").split(":").map(Number);
+  let mins = (eh * 60 + em) - (sh * 60 + sm);
+  if (mins < 0) mins += 24 * 60;
+  return mins / 60;
+}
+
 function calcPlannedHours(clinic, monthDate) {
   const year = monthDate.getFullYear();
-  const month = monthDate.getMonth(); // 0-based
+  const month = monthDate.getMonth();
   const daysInMonth = getDaysInMonth(monthDate);
   const holidays = getIsraeliHolidays(year);
   const eves = getHolidayEves(year);
   const activeDays = (clinic.active_days || []).map(Number);
   const shiftTypes = clinic.shift_types || [];
 
-  // clinic open hours per day
   const [oh, om] = (clinic.open_time || "08:00").split(":").map(Number);
   const [ch, cm] = (clinic.close_time || "20:00").split(":").map(Number);
   const openHoursPerDay = ((ch * 60 + cm) - (oh * 60 + om)) / 60;
 
-  // per-role total hours + clinic open hours
-  const totals = { vet: 0, tech: 0, receptionist: 0, clinicOpen: 0, workDays: 0 };
+  const totals = { vet: 0, tech: 0, clinicOpen: 0, workDays: 0 };
 
   for (let d = 1; d <= daysInMonth; d++) {
     const date = new Date(year, month, d);
     const dateStr = format(date, "yyyy-MM-dd");
-    const dow = date.getDay(); // 0=Sun … 6=Sat
+    const dow = date.getDay();
 
-    // Skip if not an active day for this clinic
     if (!activeDays.includes(dow)) continue;
-
-    // Skip public holidays
     if (holidays.has(dateStr)) continue;
 
-    // Is this a holiday eve? Treat like a Friday.
-    const isEve = eves.has(dateStr);
-    const effectiveDow = isEve ? 5 : dow;
+    const effectiveDow = eves.has(dateStr) ? 5 : dow;
 
     totals.workDays += 1;
     totals.clinicOpen += openHoursPerDay;
@@ -54,21 +55,17 @@ function calcPlannedHours(clinic, monthDate) {
     for (const st of shiftTypes) {
       const specificDays = (st.specific_days || []).map(Number);
       if (specificDays.length > 0 && !specificDays.includes(effectiveDow)) continue;
-      const required = st.required_staff || {};
-      const [sh, sm] = (st.start_time || "00:00").split(":").map(Number);
-      const [eh, em] = (st.end_time || "00:00").split(":").map(Number);
-      let mins = (eh * 60 + em) - (sh * 60 + sm);
-      if (mins < 0) mins += 24 * 60;
-      const hours = mins / 60;
 
-      for (const role of ["vet", "tech", "receptionist"]) {
-        const count = parseInt(required[role]) || 0;
-        totals[role] += count * hours;
-      }
+      const hours = shiftDurationHours(st);
+      const required = st.required_staff || {};
+
+      // vet: hours × number of vets required in this shift
+      totals.vet += (parseInt(required.vet) || 0) * hours;
+      // tech: hours × number of techs required in this shift
+      totals.tech += (parseInt(required.tech) || 0) * hours;
     }
   }
 
-  totals.total = totals.vet + totals.tech + totals.receptionist;
   return totals;
 }
 
@@ -154,11 +151,9 @@ export default function MonthlyReport() {
           <thead>
             <tr className="bg-muted/60 border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
               <th className="text-right px-4 py-3 font-semibold">מרפאה</th>
-              <th className="text-center px-4 py-3 font-semibold">שעות פעילות מרפאה</th>
-              <th className="text-center px-4 py-3 font-semibold">סה״כ שעות צוות</th>
-              <th className="text-center px-4 py-3 font-semibold">וטרינרים</th>
-              <th className="text-center px-4 py-3 font-semibold">טכנאים</th>
-              <th className="text-center px-4 py-3 font-semibold">קבלה</th>
+              <th className="text-center px-4 py-3 font-semibold">שעות פתיחה</th>
+              <th className="text-center px-4 py-3 font-semibold">שעות וטרינרים</th>
+              <th className="text-center px-4 py-3 font-semibold">שעות טכנאים</th>
               <th className="text-right px-4 py-3 font-semibold">הערות</th>
             </tr>
           </thead>
@@ -170,10 +165,8 @@ export default function MonthlyReport() {
                   {h(hours.clinicOpen)}
                   <div className="text-[10px] text-muted-foreground font-normal">{hours.workDays} ימי עבודה</div>
                 </td>
-                <td className="px-4 py-3 text-center font-semibold">{h(hours.total)}</td>
-                <td className="px-4 py-3 text-center text-primary font-medium">{h(hours.vet)}</td>
-                <td className="px-4 py-3 text-center text-blue-600 font-medium">{h(hours.tech)}</td>
-                <td className="px-4 py-3 text-center text-amber-600 font-medium">{h(hours.receptionist)}</td>
+                <td className="px-4 py-3 text-center text-primary font-semibold">{h(hours.vet)}</td>
+                <td className="px-4 py-3 text-center text-blue-600 font-semibold">{h(hours.tech)}</td>
                 <td className="px-4 py-3 min-w-[220px]">
                   {notes.length === 0 ? (
                     <span className="text-muted-foreground text-xs">—</span>
@@ -195,7 +188,7 @@ export default function MonthlyReport() {
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={6} className="text-center py-10 text-muted-foreground">אין מרפאות פעילות</td>
+                <td colSpan={5} className="text-center py-10 text-muted-foreground">אין מרפאות פעילות</td>
               </tr>
             )}
           </tbody>
