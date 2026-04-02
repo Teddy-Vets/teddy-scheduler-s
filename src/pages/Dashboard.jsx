@@ -8,6 +8,7 @@ import StatCard from "../components/dashboard/StatCard";
 import WeeklyShiftsChart from "../components/dashboard/WeeklyShiftsChart";
 import FairnessPanel from "../components/dashboard/FairnessPanel";
 import SalaryForecast from "../components/dashboard/SalaryForecast";
+import DailyHoursGrid from "../components/dashboard/DailyHoursGrid";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
@@ -108,6 +109,8 @@ export default function Dashboard() {
       <div className="grid grid-cols-1">
         <SalaryForecast staff={staff} shifts={weekShifts} clinics={clinics} />
       </div>
+
+      <DailyHoursGrid clinics={clinics} monthOffset={0} />
     </div>
   );
 }
