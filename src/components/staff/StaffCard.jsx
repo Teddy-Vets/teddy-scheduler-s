@@ -13,7 +13,7 @@ const roleColors = {
 
 const roleBadgeIcons = {
   vet: "🩺",
-  tech: "🔧",
+  tech: "",
   receptionist: "📞",
 };
 
@@ -32,7 +32,8 @@ export default function StaffCard({ member, clinics, onEdit, onDelete, index = 0
             <div>
               <h3 className="font-semibold text-base">{member.name}</h3>
               <Badge className={`mt-1 text-xs ${roleColors[member.staff_role] || "bg-muted text-muted-foreground"}`}>
-                {roleBadgeIcons[member.staff_role]} {member.staff_role}
+                {roleBadgeIcons[member.staff_role] && <span>{roleBadgeIcons[member.staff_role]} </span>}
+                {member.staff_role === "tech" ? "טכנאי" : member.staff_role === "vet" ? "וטרינר" : "קבלה"}
               </Badge>
             </div>
             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
