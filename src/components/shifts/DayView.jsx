@@ -70,20 +70,23 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick }) {
                   </div>
                   {typeShifts.map((shift) => {
                     const member = staffMap[shift.staff_id];
+                    const role = member?.staff_role || shift.staff_role;
+                    const color = getShiftColor(shift, role);
+                    const roleLabel = role === "veterinarian" ? "וטרינר" : role === "technician" ? "טכנאי" : role === "receptionist" ? "קבלה" : null;
                     return (
                       <button
                         key={shift.id}
                         onClick={() => onShiftClick?.(shift)}
-                        style={getShiftColor(shift, member?.staff_role).style}
-                        className={`w-full text-right rounded-lg border px-2 py-1.5 text-[11px] transition-all hover:shadow-sm hover:scale-[1.02] ${getShiftColor(shift, member?.staff_role).className}`}
+                        style={color.style}
+                        className={`w-full text-right rounded-lg border px-2 py-1.5 text-[11px] transition-all hover:shadow-sm hover:scale-[1.02] ${color.className}`}
                       >
                         <div className="font-semibold truncate">{shift.staff_name || member?.name || "—"}</div>
                         <div className="text-[10px] opacity-75 mt-0.5">
                           {shift.start_time} – {shift.end_time}
                         </div>
-                        {member?.staff_role && (
+                        {roleLabel && (
                           <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 mt-0.5 border-current">
-                            {member.staff_role === "vet" ? "וטרינר" : member.staff_role === "tech" ? "טכנאי" : "קבלה"}
+                            {roleLabel}
                           </Badge>
                         )}
                       </button>
