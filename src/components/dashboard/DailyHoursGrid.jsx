@@ -12,6 +12,11 @@ function getDayOpenHours(clinic, dow) {
   return { openTime, closeTime };
 }
 
+function timeToMins(t) {
+  const [h, m] = (t || "00:00").split(":").map(Number);
+  return h * 60 + m;
+}
+
 function buildDailyGrid(clinics, monthDate) {
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
@@ -44,6 +49,16 @@ export default function DailyHoursGrid({ clinics, monthOffset = 0 }) {
   const activeClinics = useMemo(() => clinics.filter(c => c.status !== "inactive"), [clinics]);
   const dailyGrid = useMemo(() => buildDailyGrid(activeClinics, targetMonth), [activeClinics, targetMonth]);
   const monthLabel = format(targetMonth, "MMMM yyyy", { locale: he });
+
+  // Total open hours per clinic
+  const clinicTotals = useMemo(() => activeClinics.map((_, ci) => {
+    let totalMins = 0;
+    dailyGrid.forEach(({ clinicHours }) => {
+      const ch = clinicHours[ci];
+      if (ch) totalMins += timeToMins(ch.closeTime) - timeToMins(ch.openTime);
+    });
+    return Math.round(totalMins / 60);
+  }), [dailyGrid, activeClinics]);
 
   if (activeClinics.length === 0) return null;
 
@@ -87,6 +102,13 @@ export default function DailyHoursGrid({ clinics, monthOffset = 0 }) {
                 ))}
               </tr>
             ))}
+            <tr className="border-t-2 border-border bg-muted/50 font-semibold">
+              <td className="px-3 py-2 text-right sticky right-0 bg-muted/50 z-10">סה״כ</td>
+              <td className="px-2 py-2" />
+              {clinicTotals.map((total, ci) => (
+                <td key={ci} className="px-3 py-2 text-center text-primary">{total} שע׳</td>
+              ))}
+            </tr>
           </tbody>
         </table>
       </div>
