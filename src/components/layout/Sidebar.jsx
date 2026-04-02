@@ -220,16 +220,14 @@ export default function Sidebar() {
             {collapsed && <TooltipContent side="left">התנתק</TooltipContent>}
           </Tooltip>
 
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              setCollapsed(!collapsed);
-            }}
-            className="w-full h-8 px-3 flex items-center justify-center text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent rounded-lg transition-colors cursor-pointer"
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setCollapsed(!collapsed)}
+            className="w-full justify-center text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent px-3"
           >
             {collapsed ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-          </button>
+          </Button>
         </div>
       </motion.aside>
     </TooltipProvider>
