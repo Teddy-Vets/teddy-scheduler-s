@@ -26,7 +26,8 @@ const navItems = [
   { path: "/monthly-report", label: "דו״ח חודשי", icon: BarChart2 },
 ];
 
-export default function Sidebar({ collapsed, setCollapsed }) {
+export default function Sidebar() {
+  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
 
