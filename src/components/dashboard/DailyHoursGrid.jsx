@@ -51,12 +51,16 @@ export default function DailyHoursGrid({ clinics, monthOffset = 0 }) {
   const monthLabel = format(targetMonth, "MMMM yyyy", { locale: he });
 
   // Total open hours per clinic
-  const clinicTotals = useMemo(() => activeClinics.map((_, ci) => {
+  const clinicTotals = useMemo(() => activeClinics.map((clinic, ci) => {
     let totalMins = 0;
     dailyGrid.forEach(({ clinicHours }) => {
       const ch = clinicHours[ci];
-      if (ch) totalMins += timeToMins(ch.closeTime) - timeToMins(ch.openTime);
+      if (!ch) return;
+      let mins = timeToMins(ch.closeTime) - timeToMins(ch.openTime);
+      if (mins < 0) mins += 24 * 60; // overnight shift
+      totalMins += mins;
     });
+    console.log(`[DailyHoursGrid] ${clinic.name}: ${dailyGrid.filter((_,i)=>dailyGrid[i].clinicHours[ci]).length} days, totalMins=${totalMins}, hours=${Math.round(totalMins/60)}`);
     return Math.round(totalMins / 60);
   }), [dailyGrid, activeClinics]);
 
