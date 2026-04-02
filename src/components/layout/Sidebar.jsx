@@ -204,7 +204,15 @@ export default function Sidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="p-2 border-t border-sidebar-border space-y-1 relative z-[60]">
+        {/* Collapse toggle on left border, vertically centered */}
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="absolute top-1/2 left-0 -translate-y-1/2 -translate-x-1/2 z-[60] w-6 h-6 rounded-full bg-sidebar border border-sidebar-border flex items-center justify-center text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors shadow-sm"
+        >
+          {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+        </button>
+
+        <div className="p-2 border-t border-sidebar-border">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -219,15 +227,6 @@ export default function Sidebar() {
             </TooltipTrigger>
             {collapsed && <TooltipContent side="left">התנתק</TooltipContent>}
           </Tooltip>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setCollapsed(!collapsed)}
-            className="w-full justify-center text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent px-3"
-          >
-            {collapsed ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-          </Button>
         </div>
       </motion.aside>
     </TooltipProvider>
