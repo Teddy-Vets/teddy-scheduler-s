@@ -26,12 +26,18 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick }) {
         const dateStr = format(day, "yyyy-MM-dd");
         const dayShifts = shifts.filter((s) => s.date === dateStr);
 
-        // group by shift_type_name then list staff
+        // group by shift_type_name then list staff, sorted by start_time
         const byShiftType = {};
         dayShifts.forEach((s) => {
           const key = s.shift_type_name || "כללי";
           if (!byShiftType[key]) byShiftType[key] = [];
           byShiftType[key].push(s);
+        });
+        // Sort shift types by their earliest start_time
+        const sortedEntries = Object.entries(byShiftType).sort(([, aShifts], [, bShifts]) => {
+          const aTime = aShifts[0]?.start_time || "00:00";
+          const bTime = bShifts[0]?.start_time || "00:00";
+          return aTime.localeCompare(bTime);
         });
 
         return (
@@ -56,7 +62,7 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick }) {
 
             {/* Shifts */}
             <div className="flex flex-col gap-1.5 p-1.5 flex-1">
-              {Object.entries(byShiftType).map(([typeName, typeShifts]) => (
+              {sortedEntries.map(([typeName, typeShifts]) => (
                 <div key={typeName} className="space-y-1">
                   <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide px-1">
                     {typeName}
