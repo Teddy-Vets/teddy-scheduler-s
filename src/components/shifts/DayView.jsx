@@ -6,11 +6,11 @@ import { Badge } from "@/components/ui/badge";
 const DAY_NAMES = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
 
 function getShiftColor(shift, role) {
-  if (shift.status === "cancelled") return "bg-muted text-muted-foreground line-through";
-  if (shift.status === "completed") return "bg-green-100 border-green-300 text-green-800";
-  if (role === "veterinarian") return "bg-[#fff3e0] border-[#ffcc81] text-amber-900";
-  if (role === "receptionist") return "bg-blue-50 border-blue-200 text-blue-800";
-  return "bg-primary/10 border-primary/30 text-primary";
+  if (shift.status === "cancelled") return { className: "bg-muted text-muted-foreground line-through", style: {} };
+  if (shift.status === "completed") return { className: "bg-green-100 border-green-300 text-green-800", style: {} };
+  if (role === "veterinarian") return { className: "border text-amber-900", style: { backgroundColor: "#fff8ec", borderColor: "#ffcc81" } };
+  if (role === "receptionist") return { className: "bg-blue-50 border-blue-200 text-blue-800", style: {} };
+  return { className: "bg-primary/10 border-primary/30 text-primary", style: {} };
 }
 
 export default function DayView({ shifts, staff, weekOffset, onShiftClick }) {
@@ -74,7 +74,8 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick }) {
                       <button
                         key={shift.id}
                         onClick={() => onShiftClick?.(shift)}
-                        className={`w-full text-right rounded-lg border px-2 py-1.5 text-[11px] transition-all hover:shadow-sm hover:scale-[1.02] ${getShiftColor(shift, member?.staff_role)}`}
+                        style={getShiftColor(shift, member?.staff_role).style}
+                        className={`w-full text-right rounded-lg border px-2 py-1.5 text-[11px] transition-all hover:shadow-sm hover:scale-[1.02] ${getShiftColor(shift, member?.staff_role).className}`}
                       >
                         <div className="font-semibold truncate">{shift.staff_name || member?.name || "—"}</div>
                         <div className="text-[10px] opacity-75 mt-0.5">
