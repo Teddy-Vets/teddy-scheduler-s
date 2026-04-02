@@ -26,7 +26,8 @@ const navItems = [
   { path: "/monthly-report", label: "דו״ח חודשי", icon: BarChart2 },
 ];
 
-export default function Sidebar({ collapsed = false, onCollapsedChange = () => {} }) {
+export default function Sidebar() {
+  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
 
@@ -222,7 +223,7 @@ export default function Sidebar({ collapsed = false, onCollapsedChange = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onCollapsedChange(!collapsed)}
+            onClick={() => setCollapsed(!collapsed)}
             className="w-full h-8 text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent"
           >
             {collapsed ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
