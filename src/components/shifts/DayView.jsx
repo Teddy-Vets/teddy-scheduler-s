@@ -6,11 +6,12 @@ import { Badge } from "@/components/ui/badge";
 const DAY_NAMES = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
 
 function getShiftColor(shift, role) {
-  if (shift.status === "cancelled") return { className: "bg-muted text-muted-foreground line-through", style: {} };
-  if (shift.status === "completed") return { className: "bg-green-100 border-green-300 text-green-800", style: {} };
-  if (role === "veterinarian") return { className: "border text-amber-900", style: { backgroundColor: "#fff8ec", borderColor: "#ffcc81" } };
-  if (role === "receptionist") return { className: "bg-blue-50 border-blue-200 text-blue-800", style: {} };
-  return { className: "bg-primary/10 border-primary/30 text-primary", style: {} };
+  if (shift.status === "cancelled") return { className: "border text-muted-foreground line-through", style: { backgroundColor: "#f5f5f5", borderColor: "#d0d0d0" } };
+  if (shift.status === "completed") return { className: "border text-green-800", style: { backgroundColor: "#dcfce7", borderColor: "#86efac" } };
+  if (role === "vet" || role === "veterinarian") return { className: "border text-amber-900 font-medium", style: { backgroundColor: "#fff8ec", borderColor: "#f5a623" } };
+  if (role === "receptionist") return { className: "border text-blue-800", style: { backgroundColor: "#eff6ff", borderColor: "#93c5fd" } };
+  // tech / default - pinkish (existing app theme)
+  return { className: "border text-rose-900", style: { backgroundColor: "#fff0f0", borderColor: "#fca5a5" } };
 }
 
 export default function DayView({ shifts, staff, weekOffset, onShiftClick }) {
@@ -72,7 +73,7 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick }) {
                     const member = staffMap[shift.staff_id];
                     const role = member?.staff_role || shift.staff_role;
                     const color = getShiftColor(shift, role);
-                    const roleLabel = role === "veterinarian" ? "וטרינר" : role === "technician" ? "טכנאי" : role === "receptionist" ? "קבלה" : null;
+                    const roleLabel = (role === "vet" || role === "veterinarian") ? "וטרינר" : (role === "tech" || role === "technician") ? "טכנאי" : role === "receptionist" ? "קבלה" : null;
                     return (
                       <button
                         key={shift.id}
