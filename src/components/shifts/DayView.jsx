@@ -64,12 +64,22 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick }) {
 
             {/* Shifts */}
             <div className="flex flex-col gap-1.5 p-1.5 flex-1">
-              {sortedEntries.map(([typeName, typeShifts]) => (
+              {sortedEntries.map(([typeName, typeShifts]) => {
+              // Sort shifts by role: vet first, then tech, then others
+              const roleOrder = { vet: 0, veterinarian: 0, tech: 1, technician: 1, receptionist: 2 };
+              const sortedShifts = [...typeShifts].sort((a, b) => {
+                const member_a = staffMap[a.staff_id];
+                const role_a = member_a?.staff_role || a.staff_role;
+                const member_b = staffMap[b.staff_id];
+                const role_b = member_b?.staff_role || b.staff_role;
+                return (roleOrder[role_a] || 99) - (roleOrder[role_b] || 99);
+              });
+              return (
                 <div key={typeName} className="space-y-1">
                   <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide px-1">
                     {typeName}
                   </div>
-                  {typeShifts.map((shift) => {
+                  {sortedShifts.map((shift) => {
                     const member = staffMap[shift.staff_id];
                     const role = member?.staff_role || shift.staff_role;
                     const color = getShiftColor(shift, role);
@@ -94,7 +104,8 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick }) {
                     );
                   })}
                 </div>
-              ))}
+              );
+            })}
 
               {dayShifts.length === 0 && (
                 <div className="flex-1 flex items-center justify-center text-[10px] text-muted-foreground py-4">
