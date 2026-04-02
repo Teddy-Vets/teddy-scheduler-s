@@ -12,9 +12,9 @@ const roleColors = {
 };
 
 const roleBadgeIcons = {
-  vet: "🩺",
+  vet: "",
   tech: "",
-  receptionist: "📞",
+  receptionist: "",
 };
 
 export default function StaffCard({ member, clinics, onEdit, onDelete, index = 0 }) {
