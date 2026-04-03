@@ -31,6 +31,18 @@ function normDay(d) {
   return typeof d === "number" ? d : parseFloat(d);
 }
 
+/** Map between short keys used in required_staff and full staff_role enum values */
+const ROLE_SHORT_TO_FULL = { vet: "veterinarian", tech: "technician", receptionist: "receptionist" };
+const ROLE_FULL_TO_SHORT = { veterinarian: "vet", technician: "tech", receptionist: "receptionist" };
+
+function normalizeRoleToFull(role) {
+  return ROLE_SHORT_TO_FULL[role] || role;
+}
+
+function normalizeRoleToShort(role) {
+  return ROLE_FULL_TO_SHORT[role] || role;
+}
+
 /** Parse "HH:MM" into a comparable minutes-since-midnight number */
 function toMinutes(timeStr) {
   if (!timeStr) return 0;
@@ -184,13 +196,16 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
       }
 
       // Build required slots per role from required_staff
+      // Keys in required_staff use short names (vet, tech, receptionist)
+      // We normalize to full staff_role names (veterinarian, technician, receptionist)
       const requiredStaff = shiftType.required_staff || {};
       const roleSlots = [];
       const roleOrder = ["vet", "tech", "receptionist"];
-      for (const role of roleOrder) {
-        const count = parseInt(requiredStaff[role]) || 0;
+      for (const shortRole of roleOrder) {
+        const count = parseInt(requiredStaff[shortRole]) || 0;
+        const fullRole = normalizeRoleToFull(shortRole);
         for (let i = 0; i < count; i++) {
-          roleSlots.push(role);
+          roleSlots.push(fullRole);
         }
       }
       // Fallback: if no required_staff configured, assign one person (any role)
@@ -209,9 +224,16 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
       const alreadyGenerated = existingForSlot(newShifts);
 
       // Count already filled per role
+      // Resolve the role from the shift's staff_role, or look it up from clinicStaff
       const filledPerRole = {};
       for (const s of [...alreadyExisting, ...alreadyGenerated]) {
-        const r = s.staff_role || null;
+        let r = s.staff_role || null;
+        // If staff_role not stored on shift, look up from staff list
+        if (!r && s.staff_id) {
+          const staffMember = clinicStaff.find((m) => m.id === s.staff_id) ||
+                              allStaff.find((m) => m.id === s.staff_id);
+          r = staffMember?.staff_role || null;
+        }
         filledPerRole[r] = (filledPerRole[r] || 0) + 1;
       }
 
@@ -290,7 +312,7 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
          });
 
         if (eligible.length === 0) {
-          const roleLabels = { vet: "וטרינר", tech: "טכנאי", receptionist: "קבלן/ית" };
+          const roleLabels = { veterinarian: "וטרינר", technician: "טכנאי", receptionist: "קבלן/ית", vet: "וטרינר", tech: "טכנאי" };
           const roleLabel = (targetRole && roleLabels[targetRole]) || "עובד כלשהו";
           const globalPool = [...existingShifts, ...newShifts];
           const candidatePool = clinicStaff.filter((m) => !targetRole || m.staff_role === targetRole);
