@@ -2,6 +2,7 @@ import React from "react";
 import { addDays, startOfWeek, format, isSameDay } from "date-fns";
 import { he } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
+import { Maximize2 } from "lucide-react";
 
 const DAY_NAMES = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
 
@@ -14,7 +15,7 @@ function getShiftColor(shift, role) {
   return { className: "border text-rose-900", style: { backgroundColor: "#fff0f0", borderColor: "#fca5a5" } };
 }
 
-export default function DayView({ shifts, staff, weekOffset, onShiftClick }) {
+export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExpandDay }) {
   const weekStart = startOfWeek(addDays(new Date(), weekOffset * 7), { weekStartsOn: 0 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const today = new Date();
@@ -50,7 +51,7 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick }) {
             }`}
           >
             {/* Day header */}
-            <div className={`px-2 py-2 border-b text-center rounded-t-xl ${isToday ? "bg-primary text-primary-foreground" : "bg-muted/50"}`}>
+            <div className={`px-2 py-2 border-b text-center rounded-t-xl relative group/header ${isToday ? "bg-primary text-primary-foreground" : "bg-muted/50"}`}>
               <div className="text-[11px] font-medium opacity-80">{DAY_NAMES[idx]}</div>
               <div className={`text-lg font-bold leading-tight ${isToday ? "text-primary-foreground" : ""}`}>
                 {format(day, "d")}
@@ -59,6 +60,15 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick }) {
                 <div className={`text-[10px] mt-0.5 ${isToday ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
                   {dayShifts.length} משמרות
                 </div>
+              )}
+              {dayShifts.length > 0 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onExpandDay?.(day); }}
+                  className={`absolute top-1.5 left-1.5 p-1 rounded-md opacity-0 group-hover/header:opacity-100 transition-opacity ${isToday ? "hover:bg-primary-foreground/20 text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
+                  title="תצוגה מורחבת"
+                >
+                  <Maximize2 className="w-3.5 h-3.5" />
+                </button>
               )}
             </div>
 

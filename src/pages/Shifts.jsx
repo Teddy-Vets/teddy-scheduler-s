@@ -17,6 +17,7 @@ import ScheduleBoard from "../components/shifts/ScheduleBoard";
 import CellShiftDialog from "../components/shifts/CellShiftDialog";
 import SmartSchedulerDialog from "../components/shifts/SmartSchedulerDialog";
 import DayView from "../components/shifts/DayView";
+import ExpandedDayView from "../components/shifts/ExpandedDayView";
 import { runSmartScheduler } from "../lib/smartScheduler";
 
 export default function Shifts() {
@@ -33,6 +34,7 @@ export default function Shifts() {
   const [schedulerResult, setSchedulerResult] = useState(null);
   const [schedulerDialogOpen, setSchedulerDialogOpen] = useState(false);
   const [isCreatingShifts, setIsCreatingShifts] = useState(false);
+  const [expandedDay, setExpandedDay] = useState(null);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -251,6 +253,7 @@ export default function Shifts() {
             staff={staff}
             weekOffset={weekOffset}
             onShiftClick={(shift) => { setSelectedShift(shift); setCalDialogOpen(true); }}
+            onExpandDay={(day) => setExpandedDay(day)}
           />
         </TabsContent>
       </Tabs>
@@ -286,6 +289,15 @@ export default function Shifts() {
         isCreating={isCreatingShifts}
         clinic={selectedClinicId !== "all" ? clinics.find((c) => c.id === selectedClinicId) : null}
         staff={staff}
+      />
+
+      <ExpandedDayView
+        open={!!expandedDay}
+        onOpenChange={(open) => { if (!open) setExpandedDay(null); }}
+        date={expandedDay}
+        shifts={filteredShifts}
+        staff={staff}
+        onShiftClick={(shift) => { setExpandedDay(null); setSelectedShift(shift); setCalDialogOpen(true); }}
       />
 
       <Toaster />
