@@ -15,16 +15,34 @@ function getShiftColor(shift, role) {
   return { className: "border text-rose-900", style: { backgroundColor: "#fff0f0", borderColor: "#fca5a5" } };
 }
 
-export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExpandDay }) {
+export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExpandDay, clinics, selectedClinicId }) {
   const weekStart = startOfWeek(addDays(new Date(), weekOffset * 7), { weekStartsOn: 0 });
-  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const allDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const today = new Date();
 
   const staffMap = Object.fromEntries(staff.map((s) => [s.id, s]));
 
+  // Determine if Saturday (dow=6) should be hidden:
+  // If a specific clinic is selected and Saturday is not in its active_days, hide it
+  const hideSaturday = (() => {
+    if (selectedClinicId && selectedClinicId !== "all") {
+      const clinic = (clinics || []).find((c) => c.id === selectedClinicId);
+      if (clinic && clinic.active_days && !clinic.active_days.map(Number).includes(6)) return true;
+    }
+    if (!selectedClinicId || selectedClinicId === "all") {
+      const activeClinics = (clinics || []).filter((c) => c.status !== "inactive");
+      if (activeClinics.length > 0 && activeClinics.every((c) => c.active_days && !c.active_days.map(Number).includes(6))) return true;
+    }
+    return false;
+  })();
+
+  const days = hideSaturday ? allDays.filter((d) => d.getDay() !== 6) : allDays;
+  const colCount = days.length;
+
   return (
-    <div className="grid grid-cols-7 gap-2">
-      {days.map((day, idx) => {
+    <div className={`grid gap-2`} style={{ gridTemplateColumns: `repeat(${colCount}, minmax(0, 1fr))` }}>
+      {days.map((day) => {
+        const idx = day.getDay();
         const isToday = isSameDay(day, today);
         const dateStr = format(day, "yyyy-MM-dd");
         const dayShifts = shifts.filter((s) => s.date === dateStr);
@@ -47,6 +65,7 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExp
           <div
             key={idx}
             className={`flex flex-col rounded-xl border min-h-[140px] ${
+
               isToday ? "border-primary bg-primary/5" : "border-border bg-card"
             }`}
           >

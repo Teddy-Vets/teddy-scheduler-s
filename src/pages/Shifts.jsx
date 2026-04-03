@@ -254,6 +254,8 @@ export default function Shifts() {
             weekOffset={weekOffset}
             onShiftClick={(shift) => { setSelectedShift(shift); setCalDialogOpen(true); }}
             onExpandDay={(day) => setExpandedDay(day)}
+            clinics={clinics}
+            selectedClinicId={selectedClinicId}
           />
         </TabsContent>
       </Tabs>
