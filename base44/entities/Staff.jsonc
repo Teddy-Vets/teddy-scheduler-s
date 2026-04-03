@@ -9,8 +9,8 @@
     "staff_role": {
       "type": "string",
       "enum": [
-        "veterinarian",
-        "technician",
+        "vet",
+        "tech",
         "receptionist"
       ],
       "description": "Staff professional role"
