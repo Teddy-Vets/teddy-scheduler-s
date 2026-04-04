@@ -18,7 +18,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-const navItems = [
+const adminNavItems = [
   { path: "/", label: "דשבורד", icon: LayoutDashboard },
   { path: "/shifts", label: "לוח שיבוץ", icon: Calendar },
   { path: "/staff", label: "צוות", icon: Users },
@@ -26,7 +26,12 @@ const navItems = [
   { path: "/monthly-report", label: "דו״ח חודשי", icon: BarChart2 },
 ];
 
-export default function Sidebar({ collapsed, setCollapsed }) {
+const userNavItems = [
+  { path: "/my-shifts", label: "המשמרות שלי", icon: Calendar },
+];
+
+export default function Sidebar({ collapsed, setCollapsed, user }) {
+  const navItems = user?.role === 'user' ? userNavItems : adminNavItems;
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
 

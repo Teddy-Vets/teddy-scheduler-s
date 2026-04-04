@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import { useToast } from "@/components/ui/use-toast";
 import StaffFormDialog from "../components/staff/StaffFormDialog";
 import StaffDetailDrawer from "../components/staff/StaffDetailDrawer";
 
@@ -29,6 +30,20 @@ export default function StaffPage() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [clinicFilter, setClinicFilter] = useState("all");
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const handleInvite = async (member) => {
+    if (!member.email) {
+      toast({ title: "שגיאה", description: "לעובד אין כתובת אימייל מוגדרת", variant: "destructive" });
+      return;
+    }
+    try {
+      await base44.users.inviteUser(member.email, "user");
+      toast({ title: "הזמנה נשלחה", description: `הזמנה למערכת נשלחה בהצלחה ל-${member.email}` });
+    } catch (error) {
+      toast({ title: "שגיאה", description: "הייתה שגיאה בשליחת ההזמנה", variant: "destructive" });
+    }
+  };
 
   const { data: staff = [], isLoading } = useQuery({
     queryKey: ["staff"],
@@ -197,6 +212,7 @@ export default function StaffPage() {
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => handleInvite(member)}>הזמן למערכת</Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openDetail(member)}><Eye className="w-3.5 h-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(member)}><Pencil className="w-3.5 h-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(member.id)}><Trash2 className="w-3.5 h-3.5" /></Button>

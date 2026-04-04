@@ -1,0 +1,32 @@
+{
+  "name": "ShiftChangeRequest",
+  "type": "object",
+  "properties": {
+    "shift_id": {
+      "type": "string",
+      "description": "The ID of the shift the employee wants to change"
+    },
+    "staff_id": {
+      "type": "string",
+      "description": "The ID of the staff member requesting the change"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Reason for the change request"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending"
+    }
+  },
+  "required": [
+    "shift_id",
+    "staff_id",
+    "reason"
+  ]
+}

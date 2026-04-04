@@ -12,9 +12,11 @@ import Shifts from './pages/Shifts';
 import StaffPage from './pages/StaffPage';
 import Clinics from './pages/Clinics';
 import MonthlyReport from './pages/MonthlyReport';
+import MyShifts from './pages/MyShifts';
+import { Navigate } from 'react-router-dom';
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin, user } = useAuth();
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
@@ -39,7 +41,8 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route element={<AppLayout />}>
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/" element={user?.role === 'user' ? <Navigate to="/my-shifts" replace /> : <Dashboard />} />
+        <Route path="/my-shifts" element={<MyShifts />} />
         <Route path="/shifts" element={<Shifts />} />
         <Route path="/staff" element={<StaffPage />} />
         <Route path="/clinics" element={<Clinics />} />

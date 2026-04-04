@@ -16,7 +16,7 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      <Sidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
+      <Sidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} user={user} />
       <motion.main
         className="pt-14 md:pt-0 transition-all duration-300"
         style={{ marginRight: undefined }}

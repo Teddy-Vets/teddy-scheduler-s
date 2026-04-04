@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, ChevronRight, ChevronLeft, Zap, LayoutGrid, Columns } from "lucide-react";
+import { Plus, ChevronRight, ChevronLeft, Zap, LayoutGrid, Columns, MessageSquareWarning } from "lucide-react";
 import { format, startOfWeek, addDays } from "date-fns";
 import { he } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,6 +18,7 @@ import SmartSchedulerDialog from "../components/shifts/SmartSchedulerDialog";
 import DayView from "../components/shifts/DayView";
 import ExpandedDayView from "../components/shifts/ExpandedDayView";
 import WeeklyShiftCountTable from "../components/shifts/WeeklyShiftCountTable";
+import ShiftRequestsList from "../components/shifts/ShiftRequestsList";
 import { runSmartScheduler } from "../lib/smartScheduler";
 
 export default function Shifts() {
@@ -215,6 +216,9 @@ export default function Shifts() {
           <TabsTrigger value="dayview" className="gap-2">
             <Columns className="w-4 h-4" /> מבט יומי
           </TabsTrigger>
+          <TabsTrigger value="requests" className="gap-2">
+            <MessageSquareWarning className="w-4 h-4" /> בקשות שינוי
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="board">
@@ -248,6 +252,10 @@ export default function Shifts() {
           <div className="mt-4">
             <WeeklyShiftCountTable shifts={filteredShifts} staff={staff} weekOffset={weekOffset} />
           </div>
+        </TabsContent>
+
+        <TabsContent value="requests">
+          <ShiftRequestsList shifts={shifts} staff={staff} />
         </TabsContent>
       </Tabs>
 
