@@ -76,11 +76,7 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExp
               <div className={`text-lg font-bold leading-tight ${isToday ? "text-primary-foreground" : ""}`}>
                 {format(day, "d")}
               </div>
-              {dayShifts.length > 0 && (
-                <div className={`text-[10px] mt-0.5 ${isToday ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
-                  {dayShifts.length} משמרות
-                </div>
-              )}
+
               {dayShifts.length > 0 && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onExpandDay?.(day); }}
