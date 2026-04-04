@@ -2,8 +2,8 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
-import { DollarSign, AlertTriangle } from "lucide-react";
-import { startOfWeek, addDays, format, differenceInHours, parse } from "date-fns";
+import { AlertTriangle, Wallet } from "lucide-react";
+import { differenceInHours, parse } from "date-fns";
 
 function parseShiftHours(startTime, endTime) {
   if (!startTime || !endTime) return 8;
@@ -15,17 +15,10 @@ function parseShiftHours(startTime, endTime) {
 }
 
 export default function SalaryForecast({ staff, shifts, clinics }) {
-  const weekStart = startOfWeek(new Date(), { weekStartsOn: 0 });
-  const weekEnd = addDays(weekStart, 6);
-  const weekStartStr = format(weekStart, "yyyy-MM-dd");
-  const weekEndStr = format(weekEnd, "yyyy-MM-dd");
-
-  const weekShifts = shifts.filter(
-    (s) => s.date >= weekStartStr && s.date <= weekEndStr && s.status !== "cancelled"
-  );
+  const activeShifts = shifts.filter((s) => s.status !== "cancelled");
 
   const staffCosts = staff.map((s) => {
-    const staffWeekShifts = weekShifts.filter((sh) => sh.staff_id === s.id);
+    const staffWeekShifts = activeShifts.filter((sh) => sh.staff_id === s.id);
     const totalHours = staffWeekShifts.reduce((acc, sh) => acc + parseShiftHours(sh.start_time, sh.end_time), 0);
 
     const clinic = clinics.find((c) => s.assigned_clinic_ids?.includes(c.id));
@@ -50,9 +43,9 @@ export default function SalaryForecast({ staff, shifts, clinics }) {
       <Card className="border-0 shadow-sm">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base font-semibold">תחזית שכר שבועית</CardTitle>
+            <CardTitle className="text-base font-semibold">תחזית שכר</CardTitle>
             <div className="flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-primary" />
+              <Wallet className="w-4 h-4 text-primary" />
               <span className="text-lg font-bold">₪{totalCost.toLocaleString("he-IL", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
             </div>
           </div>

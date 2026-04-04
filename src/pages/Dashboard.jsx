@@ -1,14 +1,12 @@
 import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Calendar, Users, Building2, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { startOfWeek, endOfWeek, addDays, addMonths, startOfMonth, endOfMonth, format } from "date-fns";
 import { he } from "date-fns/locale";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PeriodSelector from "../components/dashboard/PeriodSelector";
 import StatCard from "../components/dashboard/StatCard";
-import WeeklyShiftsChart from "../components/dashboard/WeeklyShiftsChart";
-import FairnessPanel from "../components/dashboard/FairnessPanel";
 import SalaryForecast from "../components/dashboard/SalaryForecast";
 import DailyHoursGrid from "../components/dashboard/DailyHoursGrid";
 import VetHoursCard from "../components/dashboard/VetHoursCard";
@@ -66,20 +64,9 @@ export default function Dashboard() {
 
   // Filter by period range
   const periodShifts = filteredShifts.filter((s) => s.date >= rangeStartStr && s.date <= rangeEndStr);
-  const plannedCount = periodShifts.filter((s) => s.status === "planned").length;
   const completedCount = periodShifts.filter((s) => s.status === "completed").length;
   const totalActive = periodShifts.filter((s) => s.status !== "cancelled").length;
   const completionRate = totalActive > 0 ? Math.round((completedCount / totalActive) * 100) : 0;
-
-  const activeClinics = clinics.filter((c) => c.status !== "inactive").length;
-  const activeStaff = filteredStaff.filter((s) => s.status !== "inactive").length;
-
-  // Shift counts per staff member in period
-  const periodNonCancelled = periodShifts.filter((s) => s.status !== "cancelled");
-  const staffShiftCounts = filteredStaff.map((s) => ({
-    name: s.name,
-    count: periodNonCancelled.filter((sh) => sh.staff_id === s.id).length,
-  }));
 
   if (isLoading) {
     return (
@@ -96,7 +83,6 @@ export default function Dashboard() {
   }
 
   const todayLabel = format(new Date(), "EEEE, d בMMMM yyyy", { locale: he });
-  const periodLabel = periodMode === "week" ? "השבוע" : "החודש";
 
   return (
     <div className="space-y-6">
@@ -130,37 +116,12 @@ export default function Dashboard() {
       />
 
       {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="משמרות מתוכננות" value={plannedCount} subtitle={periodLabel} icon={Calendar} color="primary" index={0} />
-        <StatCard title="אחוז ביצוע" value={`${completionRate}%`} subtitle={`${completedCount} מתוך ${totalActive} משמרות`} icon={CheckCircle2} color="accent" index={1} />
-        <StatCard title="עובדים פעילים" value={activeStaff} subtitle={isClinicView ? `משויכים ל${selectedClinic?.name}` : `${staff.length} סה״כ`} icon={Users} color="chart3" index={2} />
-        {!isClinicView && <StatCard title="מרפאות פעילות" value={activeClinics} subtitle={`${clinics.length} סה״כ`} icon={Building2} color="chart4" index={3} />}
-      </div>
-
-      {/* Shift distribution */}
-      <div className="bg-card border rounded-xl p-5 shadow-sm">
-        <h3 className="font-semibold mb-4">חלוקת משמרות ({periodMode === "week" ? `שבוע ${format(rangeStart, "d/M", { locale: he })}–${format(rangeEnd, "d/M", { locale: he })}` : monthStr})</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          {staffShiftCounts.filter((s) => s.count > 0).length > 0 ? (
-            staffShiftCounts.filter((s) => s.count > 0).map((s) => (
-              <div key={s.name} className="bg-muted/50 rounded-lg p-3 text-center border border-border/50">
-                <p className="text-xs text-muted-foreground truncate mb-1">{s.name}</p>
-                <p className="text-2xl font-bold text-primary">{s.count}</p>
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-muted-foreground col-span-full text-center py-6">אין משמרות משובצות בתקופה זו</p>
-          )}
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <StatCard title="אחוז ביצוע" value={`${completionRate}%`} subtitle={`${completedCount} מתוך ${totalActive} משמרות`} icon={CheckCircle2} color="accent" index={0} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <VetHoursCard clinics={clinics} selectedClinicId={selectedClinicId} periodMode={periodMode} periodOffset={periodOffset} />
-        <WeeklyShiftsChart shifts={filteredShifts} periodMode={periodMode} periodOffset={periodOffset} />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <FairnessPanel staff={filteredStaff} shifts={periodNonCancelled} currentMonth={monthStr} />
       </div>
 
       <div className="grid grid-cols-1">
