@@ -115,9 +115,6 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <VetHoursCard clinics={clinics} selectedClinicId={selectedClinicId} periodMode={periodMode} periodOffset={periodOffset} />
-      </div>
-
-      <div className="grid grid-cols-1">
         <SalaryForecast staff={filteredStaff} shifts={periodShifts} clinics={clinics} />
       </div>
 
