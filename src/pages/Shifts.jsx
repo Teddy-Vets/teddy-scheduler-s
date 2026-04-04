@@ -4,14 +4,13 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, ChevronRight, ChevronLeft, Zap, Calendar, LayoutGrid, Columns } from "lucide-react";
+import { Plus, ChevronRight, ChevronLeft, Zap, LayoutGrid, Columns } from "lucide-react";
 import { format, startOfWeek, addDays } from "date-fns";
 import { he } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 
-import ShiftCalendar from "../components/shifts/ShiftCalendar";
 import ShiftFormDialog from "../components/shifts/ShiftFormDialog";
 import ScheduleBoard from "../components/shifts/ScheduleBoard";
 import CellShiftDialog from "../components/shifts/CellShiftDialog";
@@ -213,9 +212,6 @@ export default function Shifts() {
           <TabsTrigger value="board" className="gap-2">
             <LayoutGrid className="w-4 h-4" /> לוח שיבוץ
           </TabsTrigger>
-          <TabsTrigger value="calendar" className="gap-2">
-            <Calendar className="w-4 h-4" /> לוח שנה
-          </TabsTrigger>
           <TabsTrigger value="dayview" className="gap-2">
             <Columns className="w-4 h-4" /> מבט יומי
           </TabsTrigger>
@@ -236,15 +232,6 @@ export default function Shifts() {
             selectedClinicId={selectedClinicId}
             onCellClick={handleCellClick}
             isScheduling={isScheduling}
-          />
-        </TabsContent>
-
-        <TabsContent value="calendar">
-          <ShiftCalendar
-            shifts={filteredShifts}
-            weekOffset={weekOffset}
-            onShiftClick={(shift) => { setSelectedShift(shift); setCalDialogOpen(true); }}
-            staff={staff}
           />
         </TabsContent>
 
