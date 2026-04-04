@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { format, startOfMonth, addMonths, startOfWeek, addDays } from "date-fns";
 import { he } from "date-fns/locale";
 import { Stethoscope } from "lucide-react";
-import { calcPlannedHours } from "@/lib/clinicHoursCalc";
+import { calcPlannedHours, calcPlannedHoursForRange } from "@/lib/clinicHoursCalc";
 
 export default function VetHoursCard({ clinics, selectedClinicId, periodMode = "month", periodOffset = 0 }) {
   const today = new Date();
@@ -13,25 +13,27 @@ export default function VetHoursCard({ clinics, selectedClinicId, periodMode = "
       ? activeClinics.filter((c) => c.id === selectedClinicId)
       : activeClinics;
 
-    // For weekly view, use the month that the week falls in
-    let monthDate;
-    let label;
-    if (periodMode === "week") {
-      const ws = startOfWeek(addDays(today, periodOffset * 7), { weekStartsOn: 0 });
-      monthDate = startOfMonth(ws);
-      label = format(monthDate, "MMMM yyyy", { locale: he });
-    } else {
-      monthDate = startOfMonth(addMonths(today, periodOffset));
-      label = format(monthDate, "MMMM yyyy", { locale: he });
-    }
-
     let totalClinicHours = 0;
     let totalVetHours = 0;
+    let label;
 
-    for (const clinic of relevantClinics) {
-      const hours = calcPlannedHours(clinic, monthDate);
-      totalClinicHours += hours.clinicOpen;
-      totalVetHours += hours.vet;
+    if (periodMode === "week") {
+      const ws = startOfWeek(addDays(today, periodOffset * 7), { weekStartsOn: 0 });
+      const we = addDays(ws, 6);
+      label = `${format(ws, "d/M", { locale: he })}–${format(we, "d/M", { locale: he })}`;
+      for (const clinic of relevantClinics) {
+        const hours = calcPlannedHoursForRange(clinic, ws, we);
+        totalClinicHours += hours.clinicOpen;
+        totalVetHours += hours.vet;
+      }
+    } else {
+      const monthDate = startOfMonth(addMonths(today, periodOffset));
+      label = format(monthDate, "MMMM yyyy", { locale: he });
+      for (const clinic of relevantClinics) {
+        const hours = calcPlannedHours(clinic, monthDate);
+        totalClinicHours += hours.clinicOpen;
+        totalVetHours += hours.vet;
+      }
     }
 
     return { totalClinicHours: Math.round(totalClinicHours), totalVetHours: Math.round(totalVetHours), label };

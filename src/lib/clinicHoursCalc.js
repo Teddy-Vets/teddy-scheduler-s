@@ -1,4 +1,4 @@
-import { format, getDaysInMonth } from "date-fns";
+import { format, getDaysInMonth, eachDayOfInterval } from "date-fns";
 import { getIsraeliHolidays, getHolidayEves } from "@/lib/israeliHolidays";
 
 export function shiftDurationHours(st) {
@@ -54,5 +54,42 @@ export function calcPlannedHours(clinic, monthDate) {
     }
   }
 
+  return totals;
+}
+
+export function calcPlannedHoursForRange(clinic, startDate, endDate) {
+  const days = eachDayOfInterval({ start: startDate, end: endDate });
+  const yearsSet = new Set(days.map((d) => d.getFullYear()));
+  const holidays = new Set();
+  const eves = new Set();
+  yearsSet.forEach((y) => {
+    getIsraeliHolidays(y).forEach((d) => holidays.add(d));
+    getHolidayEves(y).forEach((d) => eves.add(d));
+  });
+
+  const activeDays = (clinic.active_days || []).map(Number);
+  const shiftTypes = clinic.shift_types || [];
+  const totals = { vet: 0, tech: 0, clinicOpen: 0, workDays: 0 };
+
+  for (const date of days) {
+    const dateStr = format(date, "yyyy-MM-dd");
+    const dow = date.getDay();
+    if (!activeDays.includes(dow)) continue;
+    if (holidays.has(dateStr)) continue;
+
+    const effectiveDow = eves.has(dateStr) ? 5 : dow;
+    const { hours: openHoursThisDay } = getDayOpenHours(clinic, effectiveDow);
+    totals.workDays += 1;
+    totals.clinicOpen += openHoursThisDay;
+
+    for (const st of shiftTypes) {
+      const specificDays = (st.specific_days || []).map(Number);
+      if (specificDays.length > 0 && !specificDays.includes(effectiveDow)) continue;
+      const hours = shiftDurationHours(st);
+      const required = st.required_staff || {};
+      totals.vet += (parseInt(required.vet) || 0) * hours;
+      totals.tech += (parseInt(required.tech) || 0) * hours;
+    }
+  }
   return totals;
 }
