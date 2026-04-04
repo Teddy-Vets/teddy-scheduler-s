@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Calendar, Users, Building2, CheckCircle2 } from "lucide-react";
 import { startOfWeek, addDays, format } from "date-fns";
 import { he } from "date-fns/locale";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import StatCard from "../components/dashboard/StatCard";
 import WeeklyShiftsChart from "../components/dashboard/WeeklyShiftsChart";
 import FairnessPanel from "../components/dashboard/FairnessPanel";
@@ -12,6 +13,8 @@ import DailyHoursGrid from "../components/dashboard/DailyHoursGrid";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
+  const [selectedClinicId, setSelectedClinicId] = useState("all");
+
   const { data: clinics = [], isLoading: loadingClinics } = useQuery({
     queryKey: ["clinics"],
     queryFn: () => base44.entities.Clinic.list(),
@@ -34,18 +37,29 @@ export default function Dashboard() {
   const weekEndStr = format(weekEnd, "yyyy-MM-dd");
   const currentMonth = format(today, "yyyy-MM");
 
-  const weekShifts = shifts.filter((s) => s.date >= weekStartStr && s.date <= weekEndStr);
+  const isClinicView = selectedClinicId !== "all";
+  const selectedClinic = isClinicView ? clinics.find((c) => c.id === selectedClinicId) : null;
+
+  // Filter shifts by selected clinic
+  const filteredShifts = isClinicView ? shifts.filter((s) => s.clinic_id === selectedClinicId) : shifts;
+
+  // Filter staff by selected clinic
+  const filteredStaff = isClinicView
+    ? staff.filter((s) => s.assigned_clinic_ids?.includes(selectedClinicId))
+    : staff;
+
+  const weekShifts = filteredShifts.filter((s) => s.date >= weekStartStr && s.date <= weekEndStr);
   const plannedThisWeek = weekShifts.filter((s) => s.status === "planned").length;
   const completedThisWeek = weekShifts.filter((s) => s.status === "completed").length;
   const totalThisWeek = weekShifts.filter((s) => s.status !== "cancelled").length;
   const completionRate = totalThisWeek > 0 ? Math.round((completedThisWeek / totalThisWeek) * 100) : 0;
 
   const activeClinics = clinics.filter((c) => c.status !== "inactive").length;
-  const activeStaff = staff.filter((s) => s.status !== "inactive").length;
+  const activeStaff = filteredStaff.filter((s) => s.status !== "inactive").length;
   
   // Count shifts per staff member this month
-  const shiftsThisMonth = shifts.filter((s) => s.date.startsWith(currentMonth) && s.status !== "cancelled");
-  const staffShiftCounts = staff.map((s) => ({
+  const shiftsThisMonth = filteredShifts.filter((s) => s.date.startsWith(currentMonth) && s.status !== "cancelled");
+  const staffShiftCounts = filteredStaff.map((s) => ({
     name: s.name,
     count: shiftsThisMonth.filter((sh) => sh.staff_id === s.id).length,
   }));
@@ -72,16 +86,31 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">דשבורד</h1>
-        <p className="text-sm text-muted-foreground mt-1">{todayLabel} · סקירה כללית של רשת המרפאות</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">דשבורד</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {todayLabel} · {isClinicView ? `מבט על ${selectedClinic?.name}` : "סקירה כללית של רשת המרפאות"}
+          </p>
+        </div>
+        <Select value={selectedClinicId} onValueChange={setSelectedClinicId}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="כל המרפאות" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">כל המרפאות</SelectItem>
+            {clinics.filter((c) => c.status !== "inactive").map((c) => (
+              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="משמרות מתוכננות" value={plannedThisWeek} subtitle="השבוע" icon={Calendar} color="primary" index={0} />
         <StatCard title="אחוז ביצוע" value={`${completionRate}%`} subtitle={`${completedThisWeek} מתוך ${totalThisWeek} משמרות`} icon={CheckCircle2} color="accent" index={1} />
-        <StatCard title="עובדים פעילים" value={activeStaff} subtitle={`${staff.length} סה״כ`} icon={Users} color="chart3" index={2} />
-        <StatCard title="מרפאות פעילות" value={activeClinics} subtitle={`${clinics.length} סה״כ`} icon={Building2} color="chart4" index={3} />
+        <StatCard title="עובדים פעילים" value={activeStaff} subtitle={isClinicView ? `משויכים ל${selectedClinic?.name}` : `${staff.length} סה״כ`} icon={Users} color="chart3" index={2} />
+        {!isClinicView && <StatCard title="מרפאות פעילות" value={activeClinics} subtitle={`${clinics.length} סה״כ`} icon={Building2} color="chart4" index={3} />}
       </div>
 
       {/* Monthly shift distribution */}
@@ -102,15 +131,15 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <WeeklyShiftsChart shifts={shifts} />
-        <FairnessPanel staff={staff} shifts={shiftsThisMonth} currentMonth={currentMonth} />
+        <WeeklyShiftsChart shifts={filteredShifts} />
+        <FairnessPanel staff={filteredStaff} shifts={shiftsThisMonth} currentMonth={currentMonth} />
       </div>
 
       <div className="grid grid-cols-1">
-        <SalaryForecast staff={staff} shifts={weekShifts} clinics={clinics} />
+        <SalaryForecast staff={filteredStaff} shifts={weekShifts} clinics={clinics} />
       </div>
 
-      <DailyHoursGrid clinics={clinics} monthOffset={0} />
+      <DailyHoursGrid clinics={isClinicView ? [selectedClinic] : clinics} monthOffset={0} />
     </div>
   );
 }
