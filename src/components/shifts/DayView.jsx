@@ -118,6 +118,7 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExp
                         key={shift.id}
                         onClick={() => onShiftClick?.(shift)}
                         style={color.style}
+                        dir="rtl"
                         className={`w-full text-right rounded-lg border px-2 py-1.5 text-[11px] transition-all hover:shadow-sm hover:scale-[1.02] ${color.className}`}
                       >
                         <div className="font-semibold truncate">{shift.staff_name || member?.name || "—"}</div>
