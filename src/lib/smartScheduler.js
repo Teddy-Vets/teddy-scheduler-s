@@ -287,11 +287,11 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
              if (fridayCount >= fridayLimit) return false;
            }
 
-           // 8. Shift type availability: if member has day preferences, they must match this shift
+           // 8. Shift type availability: staff must have an explicit preference for this day and it must match this shift type
            // NOTE: Preferences are recurring every week (same day of week = same preference)
            const dayPrefs = member.preferred_shifts_by_day;
-           if (dayPrefs && dayPrefs[dayOfWeek]) {
-             if (dayPrefs[dayOfWeek] !== shiftType.id) return false;
+           if (!dayPrefs || !dayPrefs[dayOfWeek] || dayPrefs[dayOfWeek] !== shiftType.id) {
+             return false;
            }
 
            return true;
@@ -320,10 +320,10 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
               const fridayCount = fridaysThisMonth(m.id, dateStr, globalPool);
               if (fridayCount >= fridayLimit) issues.push(`שישי (${fridayCount}/${fridayLimit})`);
             }
-            // Check shift preferences - if has preference for this day and it doesn't match this shift type
+            // Check shift preferences - must have an explicit preference for this day matching this shift type
             const dayPrefs = m.preferred_shifts_by_day;
-            if (dayPrefs && dayPrefs[dayOfWeek] && dayPrefs[dayOfWeek] !== shiftType.id) {
-              issues.push("העדפה למשמרת אחרת");
+            if (!dayPrefs || !dayPrefs[dayOfWeek] || dayPrefs[dayOfWeek] !== shiftType.id) {
+              issues.push("אין העדפה מפורשת למשמרת זו ביום זה");
             }
             if (issues.length > 0) details.push(`${m.name}: ${issues.join(", ")}`);
           }
