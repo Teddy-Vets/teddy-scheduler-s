@@ -122,7 +122,7 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExp
                 <div key={typeName} className="space-y-1">
                   {entryIdx > 0 && <hr className="my-1" style={{ borderTop: "3px solid #d7764c" }} />}
                   <div dir="rtl" className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide px-1">
-                    {typeName}
+                    {typeName} {typeShifts[0]?.start_time}–{typeShifts[0]?.end_time}
                   </div>
                   {sortedShifts.map((shift) => {
                     const member = staffMap[shift.staff_id];
@@ -138,9 +138,7 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExp
                         className={`w-full text-right rounded-lg border px-2 py-1.5 text-[11px] transition-all hover:shadow-sm hover:scale-[1.02] ${color.className}`}
                       >
                         <div className="font-semibold truncate">{shift.staff_name || member?.name || "—"}</div>
-                        <div className="text-[10px] opacity-75 mt-0.5">
-                          {shift.start_time} – {shift.end_time}
-                        </div>
+
                         {roleLabel && (
                           <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 mt-0.5 border-current">
                             {roleLabel}
