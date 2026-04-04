@@ -36,7 +36,8 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExp
     return false;
   })();
 
-  const days = hideSaturday ? allDays.filter((d) => d.getDay() !== 6) : allDays;
+  const filteredDays = hideSaturday ? allDays.filter((d) => d.getDay() !== 6) : allDays;
+  const days = [...filteredDays].reverse();
   const colCount = days.length;
 
   return (
