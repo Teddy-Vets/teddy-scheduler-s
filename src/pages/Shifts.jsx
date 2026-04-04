@@ -18,6 +18,7 @@ import CellShiftDialog from "../components/shifts/CellShiftDialog";
 import SmartSchedulerDialog from "../components/shifts/SmartSchedulerDialog";
 import DayView from "../components/shifts/DayView";
 import ExpandedDayView from "../components/shifts/ExpandedDayView";
+import WeeklyShiftCountTable from "../components/shifts/WeeklyShiftCountTable";
 import { runSmartScheduler } from "../lib/smartScheduler";
 
 export default function Shifts() {
@@ -257,6 +258,9 @@ export default function Shifts() {
             clinics={clinics}
             selectedClinicId={selectedClinicId}
           />
+          <div className="mt-4">
+            <WeeklyShiftCountTable shifts={filteredShifts} staff={staff} weekOffset={weekOffset} />
+          </div>
         </TabsContent>
       </Tabs>
 
