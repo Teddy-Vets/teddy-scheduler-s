@@ -8,6 +8,7 @@ const ROLE_LABELS = { admin: "מנהל", user: "משתמש" };
 
 export default function AppLayout() {
   const [user, setUser] = useState(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -15,11 +16,12 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      <Sidebar />
+      <Sidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
       <motion.main
-        className="pt-14 md:pt-0 mr-0 md:mr-[256px] transition-all duration-300"
+        className="pt-14 md:pt-0 transition-all duration-300"
+        style={{ marginRight: undefined }}
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        animate={{ opacity: 1, marginRight: window.innerWidth >= 768 ? (sidebarCollapsed ? 72 : 256) : 0 }}
         transition={{ duration: 0.3 }}
       >
         <div className="p-4 md:p-8 max-w-[1600px] mx-auto">
