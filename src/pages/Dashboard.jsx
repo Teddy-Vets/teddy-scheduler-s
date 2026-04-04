@@ -10,6 +10,7 @@ import WeeklyShiftsChart from "../components/dashboard/WeeklyShiftsChart";
 import FairnessPanel from "../components/dashboard/FairnessPanel";
 import SalaryForecast from "../components/dashboard/SalaryForecast";
 import DailyHoursGrid from "../components/dashboard/DailyHoursGrid";
+import VetHoursCard from "../components/dashboard/VetHoursCard";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
@@ -131,7 +132,11 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <VetHoursCard clinics={clinics} selectedClinicId={selectedClinicId} />
         <WeeklyShiftsChart shifts={filteredShifts} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <FairnessPanel staff={filteredStaff} shifts={shiftsThisMonth} currentMonth={currentMonth} />
       </div>
 
