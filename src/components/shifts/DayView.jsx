@@ -105,7 +105,7 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExp
               });
               return (
                 <div key={typeName} className="space-y-1">
-                  <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide px-1">
+                  <div dir="rtl" className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide px-1">
                     {typeName}
                   </div>
                   {sortedShifts.map((shift) => {
