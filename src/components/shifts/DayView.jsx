@@ -3,6 +3,7 @@ import { addDays, startOfWeek, format, isSameDay } from "date-fns";
 import { he } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Maximize2 } from "lucide-react";
+import { getIsraeliHolidays, getHolidayEves } from "@/lib/israeliHolidays";
 
 const DAY_NAMES = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
 
@@ -21,6 +22,15 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExp
   const today = new Date();
 
   const staffMap = Object.fromEntries(staff.map((s) => [s.id, s]));
+
+  // Build holiday/eve sets for visible weeks
+  const yearsInView = new Set(allDays.map(d => d.getFullYear()));
+  const holidays = new Set();
+  const eves = new Set();
+  yearsInView.forEach(y => {
+    getIsraeliHolidays(y).forEach(d => holidays.add(d));
+    getHolidayEves(y).forEach(d => eves.add(d));
+  });
 
   // Determine if Saturday (dow=6) should be hidden:
   // If a specific clinic is selected and Saturday is not in its active_days, hide it
@@ -76,6 +86,12 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExp
               <div className={`text-lg font-bold leading-tight ${isToday ? "text-primary-foreground" : ""}`}>
                 {format(day, "d")}
               </div>
+              {holidays.has(dateStr) && (
+                <div className={`text-[9px] font-semibold ${isToday ? "text-primary-foreground/90" : "text-destructive"}`}>חג</div>
+              )}
+              {eves.has(dateStr) && !holidays.has(dateStr) && (
+                <div className={`text-[9px] font-semibold ${isToday ? "text-primary-foreground/90" : "text-amber-600"}`}>ערב חג</div>
+              )}
 
               {dayShifts.length > 0 && (
                 <button
