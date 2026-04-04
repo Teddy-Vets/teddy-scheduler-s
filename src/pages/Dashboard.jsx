@@ -1,12 +1,12 @@
 import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { CheckCircle2 } from "lucide-react";
+
 import { startOfWeek, endOfWeek, addDays, addMonths, startOfMonth, endOfMonth, format } from "date-fns";
 import { he } from "date-fns/locale";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PeriodSelector from "../components/dashboard/PeriodSelector";
-import StatCard from "../components/dashboard/StatCard";
+
 import SalaryForecast from "../components/dashboard/SalaryForecast";
 import DailyHoursGrid from "../components/dashboard/DailyHoursGrid";
 import VetHoursCard from "../components/dashboard/VetHoursCard";
@@ -64,9 +64,7 @@ export default function Dashboard() {
 
   // Filter by period range
   const periodShifts = filteredShifts.filter((s) => s.date >= rangeStartStr && s.date <= rangeEndStr);
-  const completedCount = periodShifts.filter((s) => s.status === "completed").length;
-  const totalActive = periodShifts.filter((s) => s.status !== "cancelled").length;
-  const completionRate = totalActive > 0 ? Math.round((completedCount / totalActive) * 100) : 0;
+
 
   if (isLoading) {
     return (
@@ -114,11 +112,6 @@ export default function Dashboard() {
         offset={periodOffset}
         onOffsetChange={setPeriodOffset}
       />
-
-      {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <StatCard title="אחוז ביצוע" value={`${completionRate}%`} subtitle={`${completedCount} מתוך ${totalActive} משמרות`} icon={CheckCircle2} color="accent" index={0} />
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <VetHoursCard clinics={clinics} selectedClinicId={selectedClinicId} periodMode={periodMode} periodOffset={periodOffset} />
