@@ -93,7 +93,7 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExp
 
             {/* Shifts */}
             <div className="flex flex-col gap-1.5 p-1.5 flex-1">
-              {sortedEntries.map(([typeName, typeShifts]) => {
+              {sortedEntries.map(([typeName, typeShifts], entryIdx) => {
               // Sort shifts by role: vet first, then tech, then others
               const roleOrder = { vet: 0, veterinarian: 0, tech: 1, technician: 1, receptionist: 2 };
               const sortedShifts = [...typeShifts].sort((a, b) => {
@@ -104,7 +104,11 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExp
                 return (roleOrder[role_a] || 99) - (roleOrder[role_b] || 99);
               });
               return (
-                <div key={typeName} className="space-y-1">
+                <div key={typeName}>
+                  {entryIdx > 0 && (
+                    <div className="border-t border-dashed border-border/70 my-1.5" />
+                  )}
+                <div className="space-y-1">
                   <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide px-1">
                     {typeName}
                   </div>
@@ -132,6 +136,7 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExp
                       </button>
                     );
                   })}
+                </div>
                 </div>
               );
             })}
