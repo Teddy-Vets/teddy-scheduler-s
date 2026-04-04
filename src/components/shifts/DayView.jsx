@@ -120,7 +120,7 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExp
               });
               return (
                 <div key={typeName} className="space-y-1">
-                  {entryIdx > 0 && <hr className="border-t-2 border-border my-1" />}
+                  {entryIdx > 0 && <hr className="my-1" style={{ borderTop: "3px solid #d7764c" }} />}
                   <div dir="rtl" className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide px-1">
                     {typeName}
                   </div>
