@@ -86,12 +86,14 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExp
               <div className={`text-lg font-bold leading-tight ${isToday ? "text-primary-foreground" : ""}`}>
                 {format(day, "d")}
               </div>
-              {holidays.has(dateStr) && (
-                <div className={`text-[9px] font-semibold ${isToday ? "text-primary-foreground/90" : "text-destructive"}`}>חג</div>
-              )}
-              {eves.has(dateStr) && !holidays.has(dateStr) && (
-                <div className={`text-[9px] font-semibold ${isToday ? "text-primary-foreground/90" : "text-amber-600"}`}>ערב חג</div>
-              )}
+              <div className="text-[9px] font-semibold h-3.5">
+                {holidays.has(dateStr) && (
+                  <span className={isToday ? "text-primary-foreground/90" : "text-destructive"}>חג</span>
+                )}
+                {eves.has(dateStr) && !holidays.has(dateStr) && (
+                  <span className={isToday ? "text-primary-foreground/90" : "text-amber-600"}>ערב חג</span>
+                )}
+              </div>
 
               {dayShifts.length > 0 && (
                 <button
