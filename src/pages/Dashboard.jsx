@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Calendar, Users, Building2, CheckCircle2 } from "lucide-react";
-import { startOfWeek, addDays, format } from "date-fns";
+import { startOfWeek, endOfWeek, addDays, addMonths, startOfMonth, endOfMonth, format } from "date-fns";
 import { he } from "date-fns/locale";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import PeriodSelector from "../components/dashboard/PeriodSelector";
 import StatCard from "../components/dashboard/StatCard";
 import WeeklyShiftsChart from "../components/dashboard/WeeklyShiftsChart";
 import FairnessPanel from "../components/dashboard/FairnessPanel";
@@ -15,6 +16,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
   const [selectedClinicId, setSelectedClinicId] = useState("all");
+  const [periodMode, setPeriodMode] = useState("week");
+  const [periodOffset, setPeriodOffset] = useState(0);
 
   const { data: clinics = [], isLoading: loadingClinics } = useQuery({
     queryKey: ["clinics"],
@@ -31,62 +34,73 @@ export default function Dashboard() {
 
   const isLoading = loadingClinics || loadingStaff || loadingShifts;
 
-  const today = new Date();
-  const weekStart = startOfWeek(today, { weekStartsOn: 0 });
-  const weekEnd = addDays(weekStart, 6);
-  const weekStartStr = format(weekStart, "yyyy-MM-dd");
-  const weekEndStr = format(weekEnd, "yyyy-MM-dd");
-  const currentMonth = format(today, "yyyy-MM");
+  // Compute period range
+  const { rangeStart, rangeEnd, rangeStartStr, rangeEndStr, monthStr } = useMemo(() => {
+    const today = new Date();
+    let rangeStart, rangeEnd;
+    if (periodMode === "week") {
+      rangeStart = startOfWeek(addDays(today, periodOffset * 7), { weekStartsOn: 0 });
+      rangeEnd = addDays(rangeStart, 6);
+    } else {
+      const target = addMonths(today, periodOffset);
+      rangeStart = startOfMonth(target);
+      rangeEnd = endOfMonth(target);
+    }
+    return {
+      rangeStart,
+      rangeEnd,
+      rangeStartStr: format(rangeStart, "yyyy-MM-dd"),
+      rangeEndStr: format(rangeEnd, "yyyy-MM-dd"),
+      monthStr: format(rangeStart, "yyyy-MM"),
+    };
+  }, [periodMode, periodOffset]);
 
   const isClinicView = selectedClinicId !== "all";
   const selectedClinic = isClinicView ? clinics.find((c) => c.id === selectedClinicId) : null;
 
-  // Filter shifts by selected clinic
+  // Filter by clinic
   const filteredShifts = isClinicView ? shifts.filter((s) => s.clinic_id === selectedClinicId) : shifts;
-
-  // Filter staff by selected clinic
   const filteredStaff = isClinicView
     ? staff.filter((s) => s.assigned_clinic_ids?.includes(selectedClinicId))
     : staff;
 
-  const weekShifts = filteredShifts.filter((s) => s.date >= weekStartStr && s.date <= weekEndStr);
-  const plannedThisWeek = weekShifts.filter((s) => s.status === "planned").length;
-  const completedThisWeek = weekShifts.filter((s) => s.status === "completed").length;
-  const totalThisWeek = weekShifts.filter((s) => s.status !== "cancelled").length;
-  const completionRate = totalThisWeek > 0 ? Math.round((completedThisWeek / totalThisWeek) * 100) : 0;
+  // Filter by period range
+  const periodShifts = filteredShifts.filter((s) => s.date >= rangeStartStr && s.date <= rangeEndStr);
+  const plannedCount = periodShifts.filter((s) => s.status === "planned").length;
+  const completedCount = periodShifts.filter((s) => s.status === "completed").length;
+  const totalActive = periodShifts.filter((s) => s.status !== "cancelled").length;
+  const completionRate = totalActive > 0 ? Math.round((completedCount / totalActive) * 100) : 0;
 
   const activeClinics = clinics.filter((c) => c.status !== "inactive").length;
   const activeStaff = filteredStaff.filter((s) => s.status !== "inactive").length;
-  
-  // Count shifts per staff member this month
-  const shiftsThisMonth = filteredShifts.filter((s) => s.date.startsWith(currentMonth) && s.status !== "cancelled");
+
+  // Shift counts per staff member in period
+  const periodNonCancelled = periodShifts.filter((s) => s.status !== "cancelled");
   const staffShiftCounts = filteredStaff.map((s) => ({
     name: s.name,
-    count: shiftsThisMonth.filter((sh) => sh.staff_id === s.id).length,
+    count: periodNonCancelled.filter((sh) => sh.staff_id === s.id).length,
   }));
 
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div>
-          <Skeleton className="h-8 w-48 mb-2" />
-          <Skeleton className="h-4 w-72" />
-        </div>
+        <div><Skeleton className="h-8 w-48 mb-2" /><Skeleton className="h-4 w-72" /></div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-32 rounded-xl" />)}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Skeleton className="h-80 rounded-xl" />
-          <Skeleton className="h-80 rounded-xl" />
+          <Skeleton className="h-80 rounded-xl" /><Skeleton className="h-80 rounded-xl" />
         </div>
       </div>
     );
   }
 
   const todayLabel = format(new Date(), "EEEE, d בMMMM yyyy", { locale: he });
+  const periodLabel = periodMode === "week" ? "השבוע" : "החודש";
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">דשבורד</h1>
@@ -107,16 +121,25 @@ export default function Dashboard() {
         </Select>
       </div>
 
+      {/* Period selector */}
+      <PeriodSelector
+        mode={periodMode}
+        onModeChange={setPeriodMode}
+        offset={periodOffset}
+        onOffsetChange={setPeriodOffset}
+      />
+
+      {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="משמרות מתוכננות" value={plannedThisWeek} subtitle="השבוע" icon={Calendar} color="primary" index={0} />
-        <StatCard title="אחוז ביצוע" value={`${completionRate}%`} subtitle={`${completedThisWeek} מתוך ${totalThisWeek} משמרות`} icon={CheckCircle2} color="accent" index={1} />
+        <StatCard title="משמרות מתוכננות" value={plannedCount} subtitle={periodLabel} icon={Calendar} color="primary" index={0} />
+        <StatCard title="אחוז ביצוע" value={`${completionRate}%`} subtitle={`${completedCount} מתוך ${totalActive} משמרות`} icon={CheckCircle2} color="accent" index={1} />
         <StatCard title="עובדים פעילים" value={activeStaff} subtitle={isClinicView ? `משויכים ל${selectedClinic?.name}` : `${staff.length} סה״כ`} icon={Users} color="chart3" index={2} />
         {!isClinicView && <StatCard title="מרפאות פעילות" value={activeClinics} subtitle={`${clinics.length} סה״כ`} icon={Building2} color="chart4" index={3} />}
       </div>
 
-      {/* Monthly shift distribution */}
+      {/* Shift distribution */}
       <div className="bg-card border rounded-xl p-5 shadow-sm">
-        <h3 className="font-semibold mb-4">חלוקת משמרות בחודש ({currentMonth})</h3>
+        <h3 className="font-semibold mb-4">חלוקת משמרות ({periodMode === "week" ? `שבוע ${format(rangeStart, "d/M", { locale: he })}–${format(rangeEnd, "d/M", { locale: he })}` : monthStr})</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
           {staffShiftCounts.filter((s) => s.count > 0).length > 0 ? (
             staffShiftCounts.filter((s) => s.count > 0).map((s) => (
@@ -126,25 +149,27 @@ export default function Dashboard() {
               </div>
             ))
           ) : (
-            <p className="text-sm text-muted-foreground col-span-full text-center py-6">אין משמרות משובצות עדיין בחודש</p>
+            <p className="text-sm text-muted-foreground col-span-full text-center py-6">אין משמרות משובצות בתקופה זו</p>
           )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <VetHoursCard clinics={clinics} selectedClinicId={selectedClinicId} />
-        <WeeklyShiftsChart shifts={filteredShifts} />
+        <VetHoursCard clinics={clinics} selectedClinicId={selectedClinicId} periodMode={periodMode} periodOffset={periodOffset} />
+        <WeeklyShiftsChart shifts={filteredShifts} periodMode={periodMode} periodOffset={periodOffset} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <FairnessPanel staff={filteredStaff} shifts={shiftsThisMonth} currentMonth={currentMonth} />
+        <FairnessPanel staff={filteredStaff} shifts={periodNonCancelled} currentMonth={monthStr} />
       </div>
 
       <div className="grid grid-cols-1">
-        <SalaryForecast staff={filteredStaff} shifts={weekShifts} clinics={clinics} />
+        <SalaryForecast staff={filteredStaff} shifts={periodShifts} clinics={clinics} />
       </div>
 
-      <DailyHoursGrid clinics={isClinicView ? [selectedClinic] : clinics} monthOffset={0} />
+      {periodMode === "month" && (
+        <DailyHoursGrid clinics={isClinicView ? [selectedClinic] : clinics} monthOffset={periodOffset} />
+      )}
     </div>
   );
 }

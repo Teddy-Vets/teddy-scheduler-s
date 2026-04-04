@@ -1,18 +1,29 @@
 import React, { useMemo } from "react";
-import { format, startOfMonth } from "date-fns";
+import { format, startOfMonth, addMonths, startOfWeek, addDays } from "date-fns";
 import { he } from "date-fns/locale";
 import { Stethoscope } from "lucide-react";
 import { calcPlannedHours } from "@/lib/clinicHoursCalc";
 
-export default function VetHoursCard({ clinics, selectedClinicId }) {
-  const monthDate = startOfMonth(new Date());
-  const monthLabel = format(monthDate, "MMMM yyyy", { locale: he });
+export default function VetHoursCard({ clinics, selectedClinicId, periodMode = "month", periodOffset = 0 }) {
+  const today = new Date();
 
-  const { totalClinicHours, totalVetHours } = useMemo(() => {
+  const { totalClinicHours, totalVetHours, label } = useMemo(() => {
     const activeClinics = (clinics || []).filter((c) => c.status !== "inactive");
     const relevantClinics = selectedClinicId && selectedClinicId !== "all"
       ? activeClinics.filter((c) => c.id === selectedClinicId)
       : activeClinics;
+
+    // For weekly view, use the month that the week falls in
+    let monthDate;
+    let label;
+    if (periodMode === "week") {
+      const ws = startOfWeek(addDays(today, periodOffset * 7), { weekStartsOn: 0 });
+      monthDate = startOfMonth(ws);
+      label = format(monthDate, "MMMM yyyy", { locale: he });
+    } else {
+      monthDate = startOfMonth(addMonths(today, periodOffset));
+      label = format(monthDate, "MMMM yyyy", { locale: he });
+    }
 
     let totalClinicHours = 0;
     let totalVetHours = 0;
@@ -23,8 +34,8 @@ export default function VetHoursCard({ clinics, selectedClinicId }) {
       totalVetHours += hours.vet;
     }
 
-    return { totalClinicHours: Math.round(totalClinicHours), totalVetHours: Math.round(totalVetHours) };
-  }, [clinics, selectedClinicId, monthDate]);
+    return { totalClinicHours: Math.round(totalClinicHours), totalVetHours: Math.round(totalVetHours), label };
+  }, [clinics, selectedClinicId, periodMode, periodOffset]);
 
   const ratio = totalClinicHours > 0 ? Math.round((totalVetHours / totalClinicHours) * 100) : 0;
   const barWidth = Math.min(ratio, 100);
@@ -33,7 +44,7 @@ export default function VetHoursCard({ clinics, selectedClinicId }) {
     <div className="bg-card border rounded-xl p-5 shadow-sm">
       <div className="flex items-center gap-2 mb-4">
         <Stethoscope className="w-5 h-5 text-primary" />
-        <h3 className="font-semibold">שעות וטרינרים לעומת שעות פעילות ({monthLabel})</h3>
+        <h3 className="font-semibold">שעות וטרינרים לעומת שעות פעילות ({label})</h3>
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-4">
@@ -55,10 +66,7 @@ export default function VetHoursCard({ clinics, selectedClinicId }) {
           <span className="font-semibold text-foreground">{ratio}%</span>
         </div>
         <div className="w-full bg-muted rounded-full h-3">
-          <div
-            className="bg-primary h-3 rounded-full transition-all duration-500"
-            style={{ width: `${barWidth}%` }}
-          />
+          <div className="bg-primary h-3 rounded-full transition-all duration-500" style={{ width: `${barWidth}%` }} />
         </div>
       </div>
     </div>
