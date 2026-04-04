@@ -9,7 +9,7 @@ const DAY_NAMES_FULL = ["ראשון", "שני", "שלישי", "רביעי", "ח�
 
 function getRoleBadge(role) {
   if (role === "vet" || role === "veterinarian") return { label: "וטרינר", className: "bg-amber-100 text-amber-800 border-amber-300" };
-  if (role === "tech" || role === "technician") return { label: "טכנאי", className: "bg-rose-100 text-rose-800 border-rose-300" };
+  if (role === "tech" || role === "technician") return { label: "אח.ות וטרינר.ית", className: "bg-rose-100 text-rose-800 border-rose-300" };
   if (role === "receptionist") return { label: "קבלה", className: "bg-blue-100 text-blue-800 border-blue-300" };
   return { label: role || "—", className: "bg-gray-100 text-gray-800 border-gray-300" };
 }

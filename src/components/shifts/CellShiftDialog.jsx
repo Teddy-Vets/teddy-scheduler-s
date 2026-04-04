@@ -148,7 +148,7 @@ export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, st
                 <SelectContent>
                   {clinicStaff.map((m) => (
                     <SelectItem key={m.id} value={m.id}>
-                      {m.name} · {m.staff_role === "veterinarian" ? "וטרינר" : m.staff_role === "technician" ? "טכנאי" : "קבלה"}
+                      {m.name} · {m.staff_role === "veterinarian" ? "וטרינר" : m.staff_role === "technician" ? "אח.ות וטרינר.ית" : "קבלה"}
                     </SelectItem>
                   ))}
                 </SelectContent>

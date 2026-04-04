@@ -280,7 +280,7 @@ export default function ClinicFormDialog({ open, onOpenChange, onSave, clinic })
                     <div className="grid grid-cols-3 gap-2">
                       {[
                         { key: "vet", label: "וטרינרים" },
-                        { key: "tech", label: "טכנאים" },
+                        { key: "tech", label: "אח.ות" },
                         { key: "receptionist", label: "קבלה" },
                       ].map(({ key, label }) => (
                         <div key={key} className="space-y-1">

@@ -298,7 +298,7 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
          });
 
         if (eligible.length === 0) {
-          const roleLabels = { vet: "וטרינר", tech: "טכנאי", receptionist: "קבלן/ית", veterinarian: "וטרינר", technician: "טכנאי" };
+          const roleLabels = { vet: "וטרינר", tech: "אח.ות וטרינר.ית", receptionist: "קבלן/ית", veterinarian: "וטרינר", technician: "אח.ות וטרינר.ית" };
           const roleLabel = (targetRole && roleLabels[targetRole]) || "עובד כלשהו";
           const globalPool = [...existingShifts, ...newShifts];
           const candidatePool = clinicStaff.filter((m) => !targetRole || m.staff_role === targetRole);

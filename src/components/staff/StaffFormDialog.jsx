@@ -139,7 +139,7 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="vet">וטרינר</SelectItem>
-                    <SelectItem value="tech">טכנאי</SelectItem>
+                    <SelectItem value="tech">אח.ות וטרינר.ית</SelectItem>
                     <SelectItem value="receptionist">קבלה</SelectItem>
                   </SelectContent>
                 </Select>

@@ -51,7 +51,7 @@ function calcPlannedHoursDetailed(clinic, monthDate) {
     const dh = getDayOpenHours(clinic, d);
     return `${DAY_NAMES[d]} (${dh.openTime}-${dh.closeTime})`;
   }).join(", ")}`);
-  lines.push(`🔧 סוגי משמרת: ${shiftTypes.map(st => `${st.name} (${st.start_time}-${st.end_time}, וטרינרים:${st.required_staff?.vet||0}, טכנאים:${st.required_staff?.tech||0})`).join(" | ")}`);
+  lines.push(`🔧 סוגי משמרת: ${shiftTypes.map(st => `${st.name} (${st.start_time}-${st.end_time}, וטרינרים:${st.required_staff?.vet||0}, אח.ות:${st.required_staff?.tech||0})`).join(" | ")}`);
   lines.push("─".repeat(60));
 
   const totals = { vet: 0, tech: 0, clinicOpen: 0, workDays: 0 };
@@ -89,14 +89,14 @@ function calcPlannedHoursDetailed(clinic, monthDate) {
       const techCount = parseInt(st.required_staff?.tech) || 0;
       dayVet += vetCount * hours;
       dayTech += techCount * hours;
-      shiftDetails.push(`  ↳ ${st.name} (${st.start_time}-${st.end_time} = ${hours}שע׳): וטרינרים ${vetCount}×${hours}=${vetCount*hours}, טכנאים ${techCount}×${hours}=${techCount*hours}`);
+      shiftDetails.push(`  ↳ ${st.name} (${st.start_time}-${st.end_time} = ${hours}שע׳): וטרינרים ${vetCount}×${hours}=${vetCount*hours}, אח.ות ${techCount}×${hours}=${techCount*hours}`);
     }
 
     totals.vet += dayVet;
     totals.tech += dayTech;
 
     const eveTag = isEve ? " [ערב חג → כיום שישי]" : "";
-    lines.push(`✅ ${dateStr} (${DAY_NAMES[dow]})${eveTag} — פתיחה: ${openTime}-${closeTime} (${openHoursThisDay}שע׳), וטרינרים: ${dayVet}שע׳, טכנאים: ${dayTech}שע׳`);
+    lines.push(`✅ ${dateStr} (${DAY_NAMES[dow]})${eveTag} — פתיחה: ${openTime}-${closeTime} (${openHoursThisDay}שע׳), וטרינרים: ${dayVet}שע׳, אח.ות: ${dayTech}שע׳`);
     shiftDetails.forEach(l => lines.push(l));
   }
 
@@ -104,7 +104,7 @@ function calcPlannedHoursDetailed(clinic, monthDate) {
   lines.push(`📊 סיכום: ${totals.workDays} ימי עבודה`);
   lines.push(`   שעות פתיחה: ${totals.clinicOpen} שע׳`);
   lines.push(`   שעות וטרינרים: ${totals.vet} שע׳`);
-  lines.push(`   שעות טכנאים: ${totals.tech} שע׳`);
+  lines.push(`   שעות אח.ות: ${totals.tech} שע׳`);
 
   return { totals, lines };
 }
@@ -155,7 +155,7 @@ function buildNotes(clinic, staff, monthStr) {
   );
 
   for (const role of ["vet", "tech", "receptionist"]) {
-    const roleLabels = { vet: "וטרינרים", tech: "טכנאים", receptionist: "קבלה" };
+    const roleLabels = { vet: "וטרינרים", tech: "אח.ות וטרינר.ית", receptionist: "קבלה" };
     if (!clinic.shift_types) continue;
     const needed = Math.max(...clinic.shift_types.map((st) => parseInt(st.required_staff?.[role]) || 0));
     if (needed === 0) continue;
@@ -335,7 +335,7 @@ export default function MonthlyReport() {
               <th className="text-right px-4 py-3 font-semibold">מרפאה</th>
               <th className="text-center px-4 py-3 font-semibold">שעות פתיחה</th>
               <th className="text-center px-4 py-3 font-semibold">שעות וטרינרים</th>
-              <th className="text-center px-4 py-3 font-semibold">שעות טכנאים</th>
+              <th className="text-center px-4 py-3 font-semibold">שעות אח.ות</th>
               <th className="text-right px-4 py-3 font-semibold">הערות</th>
             </tr>
           </thead>

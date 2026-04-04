@@ -112,7 +112,7 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExp
                     const member = staffMap[shift.staff_id];
                     const role = member?.staff_role || shift.staff_role;
                     const color = getShiftColor(shift, role);
-                    const roleLabel = (role === "vet" || role === "veterinarian") ? "וטרינר" : (role === "tech" || role === "technician") ? "טכנאי" : role === "receptionist" ? "קבלה" : null;
+                    const roleLabel = (role === "vet" || role === "veterinarian") ? "וטרינר" : (role === "tech" || role === "technician") ? "אח.ות וטרינר.ית" : role === "receptionist" ? "קבלה" : null;
                     return (
                       <button
                         key={shift.id}
