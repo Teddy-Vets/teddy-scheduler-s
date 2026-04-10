@@ -74,7 +74,7 @@ export default function StaffPage() {
   const filtered = staff.filter((s) => {
     const matchSearch = s.name?.toLowerCase().includes(search.toLowerCase()) ||
       s.email?.toLowerCase().includes(search.toLowerCase());
-    const matchRole = roleFilter === "all" || s.staff_role === roleFilter;
+    const matchRole = roleFilter === "all" || (Array.isArray(s.staff_role) ? s.staff_role.includes(roleFilter) : s.staff_role === roleFilter);
     const matchClinic = clinicFilter === "all" || s.assigned_clinic_ids?.includes(clinicFilter);
     return matchSearch && matchRole && matchClinic;
   });
@@ -176,9 +176,13 @@ export default function StaffPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge className={`text-xs border ${ROLE_COLORS[member.staff_role] || ""}`}>
-                      {ROLE_LABELS[member.staff_role] || member.staff_role}
-                    </Badge>
+                    <div className="flex gap-1 flex-wrap">
+                      {(Array.isArray(member.staff_role) ? member.staff_role : [member.staff_role].filter(Boolean)).map((role) => (
+                        <Badge key={role} className={`text-xs border ${ROLE_COLORS[role] || ""}`}>
+                          {ROLE_LABELS[role] || role}
+                        </Badge>
+                      ))}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">

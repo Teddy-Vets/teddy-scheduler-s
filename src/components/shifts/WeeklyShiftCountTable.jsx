@@ -38,7 +38,9 @@ export default function WeeklyShiftCountTable({ shifts, staff, weekOffset }) {
           {staffWithShifts.map((s, i) => (
             <tr key={s.id} className={`border-b border-border ${i % 2 !== 0 ? "bg-muted/20" : ""}`}>
               <td className="px-4 py-1.5 font-medium">{s.name}</td>
-              <td className="px-4 py-1.5 text-center text-muted-foreground">{ROLE_LABELS[s.staff_role] || s.staff_role}</td>
+              <td className="px-4 py-1.5 text-center text-muted-foreground">
+                {(Array.isArray(s.staff_role) ? s.staff_role : [s.staff_role].filter(Boolean)).map(r => ROLE_LABELS[r] || r).join(", ")}
+              </td>
               <td className="px-4 py-1.5 text-center font-semibold">{s.shiftCount}</td>
             </tr>
           ))}

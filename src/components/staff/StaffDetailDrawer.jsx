@@ -58,9 +58,13 @@ export default function StaffDetailDrawer({ open, onOpenChange, member, clinics,
               </div>
               <div>
                 <SheetTitle className="text-lg">{member.name}</SheetTitle>
-                <Badge className={`mt-1 text-xs border ${ROLE_COLORS[member.staff_role] || ""}`}>
-                  {ROLE_LABELS[member.staff_role] || member.staff_role}
-                </Badge>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {(Array.isArray(member.staff_role) ? member.staff_role : [member.staff_role].filter(Boolean)).map(role => (
+                    <Badge key={role} className={`text-xs border ${ROLE_COLORS[role] || ""}`}>
+                      {ROLE_LABELS[role] || role}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </div>
             <Button variant="outline" size="sm" className="gap-1" onClick={() => onEdit(member)}>

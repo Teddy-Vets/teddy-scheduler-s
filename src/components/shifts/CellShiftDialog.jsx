@@ -13,11 +13,12 @@ import { he } from "date-fns/locale";
 import { getShiftColor } from "./ScheduleBoard";
 
 export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, staffMember, clinics, staff = [], onSave, onDelete }) {
-  const [form, setForm] = useState({ clinic_id: "", shift_type_id: "", status: "planned", start_time: "", end_time: "", staff_id: "", staff_name: "" });
+  const [form, setForm] = useState({ clinic_id: "", shift_type_id: "", status: "planned", start_time: "", end_time: "", staff_id: "", staff_name: "", staff_role: "" });
 
   useEffect(() => {
     if (!open) return;
     if (shift) {
+      const roles = Array.isArray(staffMember?.staff_role) ? staffMember.staff_role : (staffMember?.staff_role ? [staffMember.staff_role] : []);
       setForm({
         clinic_id: shift.clinic_id || "",
         shift_type_id: shift.shift_type_id || "",
@@ -26,10 +27,12 @@ export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, st
         end_time: shift.end_time || "",
         staff_id: shift.staff_id || staffMember?.id || "",
         staff_name: shift.staff_name || staffMember?.name || "",
+        staff_role: shift.staff_role || roles[0] || "",
       });
     } else {
       const defaultClinic = clinics.find((c) => staffMember?.assigned_clinic_ids?.includes(c.id));
-      setForm({ clinic_id: defaultClinic?.id || "", shift_type_id: "", status: "planned", start_time: "", end_time: "", staff_id: staffMember?.id || "", staff_name: staffMember?.name || "" });
+      const roles = Array.isArray(staffMember?.staff_role) ? staffMember.staff_role : (staffMember?.staff_role ? [staffMember.staff_role] : []);
+      setForm({ clinic_id: defaultClinic?.id || "", shift_type_id: "", status: "planned", start_time: "", end_time: "", staff_id: staffMember?.id || "", staff_name: staffMember?.name || "", staff_role: roles[0] || "" });
     }
   }, [open, shift, staffMember, clinics]);
 
@@ -48,7 +51,8 @@ export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, st
 
   const handleStaffChange = (staffId) => {
     const member = staff.find((m) => m.id === staffId);
-    setForm((prev) => ({ ...prev, staff_id: staffId, staff_name: member?.name || "" }));
+    const roles = Array.isArray(member?.staff_role) ? member.staff_role : (member?.staff_role ? [member.staff_role] : []);
+    setForm((prev) => ({ ...prev, staff_id: staffId, staff_name: member?.name || "", staff_role: roles[0] || "" }));
   };
 
   const handleSave = () => {
@@ -146,11 +150,35 @@ export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, st
               <Select value={form.staff_id} onValueChange={handleStaffChange}>
                 <SelectTrigger><SelectValue placeholder="בחר עובד" /></SelectTrigger>
                 <SelectContent>
-                  {clinicStaff.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>
-                      {m.name} · {m.staff_role === "veterinarian" ? "וטרינר" : m.staff_role === "technician" ? "אח.ות וטרינר.ית" : "קבלה"}
-                    </SelectItem>
-                  ))}
+                  {clinicStaff.map((m) => {
+                    const roles = Array.isArray(m.staff_role) ? m.staff_role : (m.staff_role ? [m.staff_role] : []);
+                    const labels = roles.map(r => r === "vet" || r === "veterinarian" ? "וטרינר" : r === "tech" || r === "technician" ? "אח.ות וטרינר.ית" : "קבלה").join(", ");
+                    return (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name} · {labels}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {form.staff_id && (
+            <div className="space-y-2">
+              <Label>תפקיד במשמרת</Label>
+              <Select value={form.staff_role} onValueChange={(v) => setForm({ ...form, staff_role: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(() => {
+                    const selectedMember = staff.find(m => m.id === (form.staff_id || staffMember?.id));
+                    const roles = Array.isArray(selectedMember?.staff_role) ? selectedMember.staff_role : (selectedMember?.staff_role ? [selectedMember.staff_role] : ["vet"]);
+                    return roles.map(r => (
+                      <SelectItem key={r} value={r}>
+                        {r === "vet" || r === "veterinarian" ? "וטרינר" : r === "tech" || r === "technician" ? "אח.ות וטרינר.ית" : "קבלה"}
+                      </SelectItem>
+                    ));
+                  })()}
                 </SelectContent>
               </Select>
             </div>

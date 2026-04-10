@@ -22,6 +22,10 @@
       "type": "string",
       "description": "Staff member name for display"
     },
+    "staff_role": {
+      "type": "string",
+      "description": "The specific role the staff member is filling in this shift"
+    },
     "clinic_id": {
       "type": "string",
       "description": "Reference to clinic ID"

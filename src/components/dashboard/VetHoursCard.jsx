@@ -55,7 +55,8 @@ export default function VetHoursCard({ clinics, selectedClinicId, periodMode = "
     const vetShifts = (shifts || []).filter((s) => {
       if (s.status === "cancelled") return false;
       const member = staffMap[s.staff_id];
-      return member?.staff_role === "vet";
+      const shiftRole = s.staff_role || (Array.isArray(member?.staff_role) ? member?.staff_role[0] : member?.staff_role);
+      return shiftRole === "vet" || shiftRole === "veterinarian";
     });
     return Math.round(vetShifts.reduce((acc, s) => acc + shiftHours(s.start_time, s.end_time), 0));
   }, [shifts, staffMap]);

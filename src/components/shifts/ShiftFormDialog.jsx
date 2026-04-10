@@ -12,7 +12,7 @@ const ROLE_LABELS = { veterinarian: "וטרינר", technician: "טכנאי", re
 export default function ShiftFormDialog({ open, onOpenChange, onSave, onDelete, shift, clinics, staff }) {
   const [form, setForm] = useState({
     date: "", staff_id: "", clinic_id: "", shift_type_id: "",
-    status: "planned", start_time: "", end_time: "",
+    status: "planned", start_time: "", end_time: "", staff_role: "",
   });
 
   useEffect(() => {
@@ -25,9 +25,10 @@ export default function ShiftFormDialog({ open, onOpenChange, onSave, onDelete, 
         status: shift.status || "planned",
         start_time: shift.start_time || "",
         end_time: shift.end_time || "",
+        staff_role: shift.staff_role || "",
       });
     } else {
-      setForm({ date: "", staff_id: "", clinic_id: "", shift_type_id: "", status: "planned", start_time: "", end_time: "" });
+      setForm({ date: "", staff_id: "", clinic_id: "", shift_type_id: "", status: "planned", start_time: "", end_time: "", staff_role: "" });
     }
   }, [shift, open]);
 
@@ -97,17 +98,44 @@ export default function ShiftFormDialog({ open, onOpenChange, onSave, onDelete, 
           )}
           <div className="space-y-2">
             <Label>עובד</Label>
-            <Select value={form.staff_id} onValueChange={(v) => setForm({ ...form, staff_id: v })}>
+            <Select value={form.staff_id} onValueChange={(v) => {
+              const selectedMember = staff.find((s) => s.id === v);
+              const roles = Array.isArray(selectedMember?.staff_role) ? selectedMember.staff_role : (selectedMember?.staff_role ? [selectedMember.staff_role] : []);
+              setForm({ ...form, staff_id: v, staff_role: roles[0] || "" });
+            }}>
               <SelectTrigger><SelectValue placeholder="בחר עובד" /></SelectTrigger>
               <SelectContent>
-                {filteredStaff.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.name} – {ROLE_LABELS[s.staff_role] || s.staff_role}
-                  </SelectItem>
-                ))}
+                {filteredStaff.map((s) => {
+                  const roles = Array.isArray(s.staff_role) ? s.staff_role : (s.staff_role ? [s.staff_role] : []);
+                  const labels = roles.map(r => ROLE_LABELS[r] || r).join(", ");
+                  return (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name} – {labels}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
+          {form.staff_id && (
+            <div className="space-y-2">
+              <Label>תפקיד במשמרת</Label>
+              <Select value={form.staff_role} onValueChange={(v) => setForm({ ...form, staff_role: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(() => {
+                    const selectedMember = staff.find(m => m.id === form.staff_id);
+                    const roles = Array.isArray(selectedMember?.staff_role) ? selectedMember.staff_role : (selectedMember?.staff_role ? [selectedMember.staff_role] : ["vet"]);
+                    return roles.map(r => (
+                      <SelectItem key={r} value={r}>
+                        {ROLE_LABELS[r] || r}
+                      </SelectItem>
+                    ));
+                  })()}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>שעת התחלה</Label>

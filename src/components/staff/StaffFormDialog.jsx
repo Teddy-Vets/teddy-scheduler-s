@@ -28,7 +28,7 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
 
   function defaultForm() {
     return {
-      name: "", staff_role: "vet", email: "", phone: "",
+      name: "", staff_role: ["vet"], email: "", phone: "",
       hourly_rate: 0, assigned_clinic_ids: [], regular_days_off: [],
       preferred_shift_types: [], preferred_shifts_by_day: {}, absences: [], status: "active",
       max_fridays_per_month: null,
@@ -39,9 +39,10 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
     if (!open) return;
     setActiveTab("info");
     if (member) {
+      const roles = Array.isArray(member.staff_role) ? member.staff_role : (member.staff_role ? [member.staff_role] : ["vet"]);
       setForm({
         name: member.name || "",
-        staff_role: member.staff_role || "vet",
+        staff_role: roles,
         email: member.email || "",
         phone: member.phone || "",
         hourly_rate: member.hourly_rate || 0,
@@ -57,6 +58,13 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
       setForm(defaultForm());
     }
   }, [member, open]);
+
+  const toggleRole = (role) => setForm((p) => ({
+    ...p,
+    staff_role: p.staff_role.includes(role)
+      ? p.staff_role.filter((r) => r !== role)
+      : [...p.staff_role, role],
+  }));
 
   const toggleClinic = (id) => setForm((p) => ({
     ...p,
@@ -135,14 +143,20 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
               </div>
               <div className="space-y-2">
                 <Label>תפקיד *</Label>
-                <Select value={form.staff_role} onValueChange={(v) => setForm({ ...form, staff_role: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="vet">וטרינר</SelectItem>
-                    <SelectItem value="tech">אח.ות וטרינר.ית</SelectItem>
-                    <SelectItem value="receptionist">קבלה</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-3">
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <Checkbox checked={form.staff_role.includes("vet")} onCheckedChange={() => toggleRole("vet")} />
+                    <span className="text-sm">וטרינר</span>
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <Checkbox checked={form.staff_role.includes("tech")} onCheckedChange={() => toggleRole("tech")} />
+                    <span className="text-sm">אח.ות וטרינר.ית</span>
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <Checkbox checked={form.staff_role.includes("receptionist")} onCheckedChange={() => toggleRole("receptionist")} />
+                    <span className="text-sm">קבלה</span>
+                  </label>
+                </div>
               </div>
             </div>
 
@@ -325,7 +339,7 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
 
         <DialogFooter className="px-6 py-4 border-t shrink-0 gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>ביטול</Button>
-          <Button onClick={() => onSave(form)} disabled={!form.name || !form.staff_role}>
+          <Button onClick={() => onSave(form)} disabled={!form.name || form.staff_role.length === 0}>
             {member ? "עדכן" : "צור עובד"}
           </Button>
         </DialogFooter>

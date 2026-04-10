@@ -218,7 +218,8 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
         if (!r && s.staff_id) {
           const staffMember = clinicStaff.find((m) => m.id === s.staff_id) ||
                               allStaff.find((m) => m.id === s.staff_id);
-          r = staffMember?.staff_role || null;
+          const roles = Array.isArray(staffMember?.staff_role) ? staffMember.staff_role : (staffMember?.staff_role ? [staffMember.staff_role] : []);
+          r = roles[0] || null;
         }
         filledPerRole[r] = (filledPerRole[r] || 0) + 1;
       }
@@ -252,7 +253,10 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
 
         const eligible = clinicStaff.filter((member) => {
            // Role filter (only if a specific role is required)
-           if (targetRole !== null && targetRole !== undefined && member.staff_role !== targetRole) return false;
+           if (targetRole !== null && targetRole !== undefined) {
+             const roles = Array.isArray(member.staff_role) ? member.staff_role : (member.staff_role ? [member.staff_role] : []);
+             if (!roles.includes(targetRole)) return false;
+           }
 
            // 1. Regular day off (same every week: 0=Sunday, 6=Saturday)
            const regDaysOff = (member.regular_days_off || []).map(normDay);
@@ -301,7 +305,11 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
           const roleLabels = { vet: "וטרינר", tech: "אח.ות וטרינר.ית", receptionist: "קבלן/ית", veterinarian: "וטרינר", technician: "אח.ות וטרינר.ית" };
           const roleLabel = (targetRole && roleLabels[targetRole]) || "עובד כלשהו";
           const globalPool = [...existingShifts, ...newShifts];
-          const candidatePool = clinicStaff.filter((m) => !targetRole || m.staff_role === targetRole);
+          const candidatePool = clinicStaff.filter((m) => {
+            if (!targetRole) return true;
+            const roles = Array.isArray(m.staff_role) ? m.staff_role : (m.staff_role ? [m.staff_role] : []);
+            return roles.includes(targetRole);
+          });
           
           // Detailed breakdown
           const details = [];
@@ -349,7 +357,7 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
           shift_type_name: shiftType.name,
           staff_id: candidate.id,
           staff_name: candidate.name,
-          staff_role: candidate.staff_role,
+          staff_role: targetRole || (Array.isArray(candidate.staff_role) ? candidate.staff_role[0] : candidate.staff_role) || "vet",
           clinic_id: clinic.id,
           clinic_name: clinic.name,
           status: "planned",

@@ -7,13 +7,16 @@
       "description": "Staff member full name"
     },
     "staff_role": {
-      "type": "string",
-      "enum": [
-        "vet",
-        "tech",
-        "receptionist"
-      ],
-      "description": "Staff professional role"
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "vet",
+          "tech",
+          "receptionist"
+        ]
+      },
+      "description": "Staff professional roles"
     },
     "assigned_clinic_ids": {
       "type": "array",

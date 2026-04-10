@@ -52,8 +52,13 @@ function ShiftCell({ shift, onCellClick, dateStr, staffMember, isAddExtra }) {
                 <Zap className="w-2.5 h-2.5 text-accent flex-shrink-0 ml-auto" />
               )}
             </div>
-            <p className="text-[10px] opacity-70 leading-tight">
-              {shift.start_time}–{shift.end_time}
+            <p className="text-[10px] opacity-70 leading-tight flex justify-between items-center gap-1">
+              <span>{shift.start_time}–{shift.end_time}</span>
+              {shift.staff_role && (
+                <span className="font-medium bg-background/50 px-1 rounded truncate">
+                  {shift.staff_role === "vet" || shift.staff_role === "veterinarian" ? "וטרינר" : shift.staff_role === "tech" || shift.staff_role === "technician" ? "אח.ות" : shift.staff_role === "receptionist" ? "קבלה" : shift.staff_role}
+                </span>
+              )}
             </p>
           </button>
         </TooltipTrigger>
@@ -169,7 +174,9 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs font-semibold truncate">{member.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{member.staff_role === "vet" ? "וטרינר" : member.staff_role === "tech" ? "אח.ות וטרינר.ית" : "קבלה"}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {(Array.isArray(member.staff_role) ? member.staff_role : [member.staff_role].filter(Boolean)).map(r => r === "vet" ? "וטרינר" : r === "tech" ? "אח.ות וטרינר.ית" : "קבלה").join(", ")}
+                      </p>
                     </div>
                   </div>
                 </td>
