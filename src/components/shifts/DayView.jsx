@@ -72,6 +72,15 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExp
           return aTime.localeCompare(bTime);
         });
 
+        // Role sort order: vet first, then tech, then receptionist
+        const roleOrder = { vet: 0, veterinarian: 0, tech: 1, technician: 1, receptionist: 2 };
+        function getEffectiveRole(shift) {
+          if (shift.staff_role) return shift.staff_role;
+          const m = staffMap[shift.staff_id];
+          const roles = Array.isArray(m?.staff_role) ? m.staff_role : (m?.staff_role ? [m.staff_role] : []);
+          return roles[0] || "";
+        }
+
         return (
           <div
             key={idx}
@@ -110,13 +119,12 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExp
             <div className="flex flex-col gap-1.5 p-1.5 flex-1">
               {sortedEntries.map(([typeName, typeShifts], entryIdx) => {
               // Sort shifts by role: vet first, then tech, then others
-              const roleOrder = { vet: 0, veterinarian: 0, tech: 1, technician: 1, receptionist: 2 };
               const sortedShifts = [...typeShifts].sort((a, b) => {
-                const member_a = staffMap[a.staff_id];
-                const role_a = a.staff_role || (Array.isArray(member_a?.staff_role) ? member_a?.staff_role[0] : member_a?.staff_role);
-                const member_b = staffMap[b.staff_id];
-                const role_b = b.staff_role || (Array.isArray(member_b?.staff_role) ? member_b?.staff_role[0] : member_b?.staff_role);
-                return (roleOrder[role_a] || 99) - (roleOrder[role_b] || 99);
+                const rA = getEffectiveRole(a);
+                const rB = getEffectiveRole(b);
+                const orderA = roleOrder[rA] !== undefined ? roleOrder[rA] : 99;
+                const orderB = roleOrder[rB] !== undefined ? roleOrder[rB] : 99;
+                return orderA - orderB;
               });
               return (
                 <div key={typeName} className="space-y-1">
@@ -126,7 +134,7 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExp
                   </div>
                   {sortedShifts.map((shift) => {
                     const member = staffMap[shift.staff_id];
-                    const role = shift.staff_role || (Array.isArray(member?.staff_role) ? member?.staff_role[0] : member?.staff_role);
+                    const role = getEffectiveRole(shift);
                     const color = getShiftColor(shift, role);
                     const roleLabel = (role === "vet" || role === "veterinarian") ? "וטרינר" : (role === "tech" || role === "technician") ? "אח.ות וטרינר.ית" : role === "receptionist" ? "קבלה" : null;
                     return (
