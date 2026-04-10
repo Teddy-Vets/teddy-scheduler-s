@@ -20,12 +20,12 @@ export function getShiftColor(shiftTypeName = "") {
 
 const DAYS_HE = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
 
-function ShiftCell({ shift, onCellClick, dateStr, staffMember }) {
+function ShiftCell({ shift, onCellClick, dateStr, staffMember, isAddExtra }) {
   if (!shift) {
     return (
       <button
         onClick={() => onCellClick(null, dateStr, staffMember)}
-        className="w-full h-full min-h-[56px] rounded-lg border-2 border-dashed border-border/50 hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 flex items-center justify-center group"
+        className={`w-full rounded-lg border-2 border-dashed border-border/50 hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 flex items-center justify-center group ${isAddExtra ? 'min-h-[28px] mt-1' : 'h-full min-h-[56px]'}`}
       >
         <Plus className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-primary/60 transition-colors" />
       </button>
@@ -188,9 +188,13 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
                       }`}
                     >
                       {isDayOff && dayShifts.length === 0 ? (
-                        <div className="w-full min-h-[56px] flex items-center justify-center">
-                          <span className="text-[10px] text-muted-foreground/50 font-medium">יום חופש</span>
-                        </div>
+                        <button
+                          onClick={() => onCellClick(null, dateStr, member)}
+                          className="w-full min-h-[56px] flex items-center justify-center rounded-lg border-2 border-dashed border-transparent hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 group relative"
+                        >
+                          <span className="text-[10px] text-muted-foreground/50 font-medium group-hover:opacity-0 transition-opacity">יום חופש</span>
+                          <Plus className="w-3.5 h-3.5 text-primary/60 absolute opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </button>
                       ) : (
                         <div className="flex flex-col gap-1">
                           {dayShifts.map((shift) => (
@@ -202,14 +206,13 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
                               onCellClick={onCellClick}
                             />
                           ))}
-                          {dayShifts.length === 0 && (
-                            <ShiftCell
-                              shift={null}
-                              dateStr={dateStr}
-                              staffMember={member}
-                              onCellClick={onCellClick}
-                            />
-                          )}
+                          <ShiftCell
+                            shift={null}
+                            dateStr={dateStr}
+                            staffMember={member}
+                            onCellClick={onCellClick}
+                            isAddExtra={dayShifts.length > 0}
+                          />
                         </div>
                       )}
                     </td>
