@@ -225,6 +225,7 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
               <Label>מקסימום שישי לחודש</Label>
               <p className="text-xs text-muted-foreground -mt-1">עוקף את הגדרת המרפאה לעובד זה. השאר ריק לשימוש בברירת המחדל של המרפאה.</p>
               <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">ימי שישי לחודש</span>
                 <Input
                   type="number"
                   min="0"
@@ -237,7 +238,6 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
                     max_fridays_per_month: e.target.value === "" ? null : parseInt(e.target.value) || 0,
                   }))}
                 />
-                <span className="text-sm text-muted-foreground">ימי שישי לחודש</span>
               </div>
             </div>
 
