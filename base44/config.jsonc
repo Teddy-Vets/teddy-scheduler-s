@@ -1,0 +1,9 @@
+{
+  "name": "Teddy Scheduler\u2019s",
+  "site": {
+    "installCommand": "npm install",
+    "buildCommand": "npm run build",
+    "serveCommand": "npm run dev",
+    "outputDirectory": "./dist"
+  }
+}
