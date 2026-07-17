@@ -75,7 +75,29 @@ function ShiftCell({ shift, onCellClick, dateStr, staffMember, isAddExtra }) {
 export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, selectedClinicId, onCellClick, isScheduling }) {
   const today = new Date();
   const weekStart = startOfWeek(addDays(today, weekOffset * 7), { weekStartsOn: 0 });
-  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  
+  let activeDaysOfWeek = [0, 1, 2, 3, 4, 5, 6];
+  if (selectedClinicId && selectedClinicId !== "all") {
+    const clinic = clinics.find(c => c.id === selectedClinicId);
+    if (clinic && clinic.active_days) {
+      activeDaysOfWeek = clinic.active_days;
+    }
+  } else {
+    const allActive = new Set();
+    clinics.forEach(c => {
+      if (c.active_days) {
+        c.active_days.forEach(d => allActive.add(d));
+      } else {
+        [0, 1, 2, 3, 4, 5, 6].forEach(d => allActive.add(d));
+      }
+    });
+    if (allActive.size > 0) {
+      activeDaysOfWeek = Array.from(allActive);
+    }
+  }
+
+  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
+    .filter(day => activeDaysOfWeek.includes(day.getDay()));
 
   // Filter staff by selected clinic
   const visibleStaff = selectedClinicId && selectedClinicId !== "all"
