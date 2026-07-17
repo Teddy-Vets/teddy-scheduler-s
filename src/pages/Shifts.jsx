@@ -19,7 +19,9 @@ import DayView from "../components/shifts/DayView";
 import ExpandedDayView from "../components/shifts/ExpandedDayView";
 import WeeklyShiftCountTable from "../components/shifts/WeeklyShiftCountTable";
 import ShiftRequestsList from "../components/shifts/ShiftRequestsList";
+import DuplicateWeekDialog from "../components/shifts/DuplicateWeekDialog";
 import { runSmartScheduler } from "../lib/smartScheduler";
+import { Copy } from "lucide-react";
 
 export default function Shifts() {
   const [weekOffset, setWeekOffset] = useState(0);
@@ -36,6 +38,7 @@ export default function Shifts() {
   const [schedulerDialogOpen, setSchedulerDialogOpen] = useState(false);
   const [isCreatingShifts, setIsCreatingShifts] = useState(false);
   const [expandedDay, setExpandedDay] = useState(null);
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -169,17 +172,26 @@ export default function Shifts() {
           </Select>
 
           {activeTab === "board" && (
-            <Button
-              onClick={handleRunScheduler}
-              disabled={isScheduling}
-              variant="outline"
-              className="gap-2 border-accent/50 text-accent hover:bg-accent hover:text-accent-foreground"
-            >
-              {isScheduling
-                ? <><div className="w-3.5 h-3.5 border-2 border-accent/30 border-t-accent rounded-full animate-spin" /> מריץ…</>
-                : <><Zap className="w-4 h-4" /> שיבוץ חכם</>
-              }
-            </Button>
+            <>
+              <Button
+                onClick={() => setDuplicateDialogOpen(true)}
+                variant="outline"
+                className="gap-2"
+              >
+                <Copy className="w-4 h-4" /> שכפל שבוע
+              </Button>
+              <Button
+                onClick={handleRunScheduler}
+                disabled={isScheduling}
+                variant="outline"
+                className="gap-2 border-accent/50 text-accent hover:bg-accent hover:text-accent-foreground"
+              >
+                {isScheduling
+                  ? <><div className="w-3.5 h-3.5 border-2 border-accent/30 border-t-accent rounded-full animate-spin" /> מריץ…</>
+                  : <><Zap className="w-4 h-4" /> שיבוץ חכם</>
+                }
+              </Button>
+            </>
           )}
 
           <Button onClick={() => { setSelectedShift(null); setCalDialogOpen(true); }} className="gap-2">
@@ -299,6 +311,14 @@ export default function Shifts() {
         shifts={filteredShifts}
         staff={staff}
         onShiftClick={(shift) => { setExpandedDay(null); setSelectedShift(shift); setCalDialogOpen(true); }}
+      />
+
+      <DuplicateWeekDialog
+        open={duplicateDialogOpen}
+        onOpenChange={setDuplicateDialogOpen}
+        currentWeekOffset={weekOffset}
+        selectedClinicId={selectedClinicId}
+        allShifts={shifts}
       />
     </div>
   );
