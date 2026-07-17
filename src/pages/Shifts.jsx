@@ -300,8 +300,6 @@ export default function Shifts() {
         staff={staff}
         onShiftClick={(shift) => { setExpandedDay(null); setSelectedShift(shift); setCalDialogOpen(true); }}
       />
-
-      <Toaster />
     </div>
   );
 }
