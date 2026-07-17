@@ -203,7 +203,7 @@ export default function Shifts() {
       {/* Week nav */}
       <div className="flex items-center justify-between bg-card border border-border rounded-xl px-4 py-2">
         {/* RTL: right arrow goes to previous week, left goes to next */}
-        <Button variant="ghost" size="icon" onClick={() => setWeekOffset((w) => w + 1)}>
+        <Button variant="ghost" size="icon" onClick={() => setWeekOffset((w) => w - 1)}>
           <ChevronRight className="w-5 h-5" />
         </Button>
         <div className="text-center">
@@ -214,7 +214,7 @@ export default function Shifts() {
             </button>
           )}
         </div>
-        <Button variant="ghost" size="icon" onClick={() => setWeekOffset((w) => w - 1)}>
+        <Button variant="ghost" size="icon" onClick={() => setWeekOffset((w) => w + 1)}>
           <ChevronLeft className="w-5 h-5" />
         </Button>
       </div>
