@@ -46,9 +46,12 @@
     "preferred_shifts_by_day": {
       "type": "object",
       "additionalProperties": {
-        "type": "string"
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
       },
-      "description": "Preferred shift type per day of week. Key = day index string, value = shift type ID"
+      "description": "Preferred shift types per day of week. Key = day index string, value = array of shift type IDs"
     },
     "max_fridays_per_month": {
       "type": "number",

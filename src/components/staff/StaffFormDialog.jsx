@@ -103,14 +103,32 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
     (st, idx, arr) => arr.findIndex((s) => s.id === st.id) === idx
   );
 
-  const getPrefForDay = (dayIdx) => form.preferred_shifts_by_day?.[dayIdx] || null;
+  const getPrefForDay = (dayIdx) => {
+    const prefs = form.preferred_shifts_by_day?.[dayIdx];
+    return Array.isArray(prefs) ? prefs : (prefs ? [prefs] : []);
+  };
 
   const setPrefForDay = (dayIdx, shiftTypeId) => setForm((p) => {
     const prefs = { ...(p.preferred_shifts_by_day || {}) };
-    if (prefs[dayIdx] === shiftTypeId) {
+    let dayPrefs = Array.isArray(prefs[dayIdx]) ? [...prefs[dayIdx]] : (prefs[dayIdx] ? [prefs[dayIdx]] : []);
+    
+    if (dayPrefs.includes(shiftTypeId)) {
+      dayPrefs = dayPrefs.filter(id => id !== shiftTypeId);
+    } else {
+      if (dayPrefs.length < 2) {
+        dayPrefs.push(shiftTypeId);
+      } else {
+        // Already 2 selected, maybe replace the second one or do nothing
+        // Or we can just limit to 2
+        // If we want exactly up to 2:
+        dayPrefs[1] = shiftTypeId; // replace the last one if full
+      }
+    }
+    
+    if (dayPrefs.length === 0) {
       delete prefs[dayIdx];
     } else {
-      prefs[dayIdx] = shiftTypeId;
+      prefs[dayIdx] = dayPrefs;
     }
     return { ...p, preferred_shifts_by_day: prefs };
   });
@@ -255,7 +273,7 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
                         <span className="text-xs font-medium w-14 text-right shrink-0 text-muted-foreground">{dayName}</span>
                         <div className="flex flex-wrap gap-1 flex-1">
                           {uniqueShiftTypes.map((st) => {
-                            const isActive = selected === st.id;
+                            const isActive = selected.includes(st.id);
                             return (
                               <button
                                 key={st.id}
@@ -272,10 +290,14 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
                             );
                           })}
                         </div>
-                        {selected && (
+                        {selected.length > 0 && (
                           <button
                             type="button"
-                            onClick={() => setPrefForDay(dayIdx, selected)}
+                            onClick={() => setForm(p => {
+                              const prefs = { ...p.preferred_shifts_by_day };
+                              delete prefs[dayIdx];
+                              return { ...p, preferred_shifts_by_day: prefs };
+                            })}
                             className="text-xs text-muted-foreground hover:text-destructive shrink-0"
                           >
                             ✕

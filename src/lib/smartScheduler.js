@@ -125,8 +125,11 @@ function scoreCandidate(member, shiftType, allShifts, weekShifts, monthShifts, d
 
   // Preference: check day-based preferences
   const dayPrefs = member.preferred_shifts_by_day;
-  if (dayPrefs && dayOfWeek !== undefined && dayPrefs[dayOfWeek] === shiftType.id) {
-    score -= 50;
+  if (dayPrefs && dayOfWeek !== undefined) {
+    const prefList = Array.isArray(dayPrefs[dayOfWeek]) ? dayPrefs[dayOfWeek] : [dayPrefs[dayOfWeek]];
+    if (prefList.includes(shiftType.id)) {
+      score -= 50;
+    }
   } else if (Array.isArray(member.preferred_shift_types) && member.preferred_shift_types.includes(shiftType.id)) {
     // legacy fallback
     score -= 30;
@@ -294,7 +297,11 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
            // 8. Shift type availability: staff must have an explicit preference for this day and it must match this shift type
            // NOTE: Preferences are recurring every week (same day of week = same preference)
            const dayPrefs = member.preferred_shifts_by_day;
-           if (!dayPrefs || !dayPrefs[dayOfWeek] || dayPrefs[dayOfWeek] !== shiftType.id) {
+           if (!dayPrefs || !dayPrefs[dayOfWeek]) {
+             return false;
+           }
+           const prefList = Array.isArray(dayPrefs[dayOfWeek]) ? dayPrefs[dayOfWeek] : [dayPrefs[dayOfWeek]];
+           if (!prefList.includes(shiftType.id)) {
              return false;
            }
 
@@ -330,8 +337,13 @@ export function runSmartScheduler({ clinic, allStaff, existingShifts, weekOffset
             }
             // Check shift preferences - must have an explicit preference for this day matching this shift type
             const dayPrefs = m.preferred_shifts_by_day;
-            if (!dayPrefs || !dayPrefs[dayOfWeek] || dayPrefs[dayOfWeek] !== shiftType.id) {
+            if (!dayPrefs || !dayPrefs[dayOfWeek]) {
               issues.push("אין העדפה מפורשת למשמרת זו ביום זה");
+            } else {
+              const prefList = Array.isArray(dayPrefs[dayOfWeek]) ? dayPrefs[dayOfWeek] : [dayPrefs[dayOfWeek]];
+              if (!prefList.includes(shiftType.id)) {
+                issues.push("אין העדפה מפורשת למשמרת זו ביום זה");
+              }
             }
             if (issues.length > 0) details.push(`${m.name}: ${issues.join(", ")}`);
           }
