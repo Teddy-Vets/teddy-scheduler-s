@@ -5,17 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Upload, FileUp, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import ImportPreviewRow from "./ImportPreviewRow";
-import { matchStaff, matchShiftType, extractionSchema, buildExtractionPrompt } from "@/lib/scheduleImport";
+import { matchStaff, matchShiftType, extractionSchema, buildWeekExtractionPrompt } from "@/lib/scheduleImport";
 
 export default function ImportScheduleDialog({ open, onOpenChange, clinic, staff, onImported }) {
   const [stage, setStage] = useState("upload"); // upload | processing | preview | importing
   const [rows, setRows] = useState([]);
+  const [progress, setProgress] = useState(0);
   const { toast } = useToast();
 
   const clinicStaff = staff.filter((s) => s.assigned_clinic_ids?.includes(clinic?.id) && s.status !== "inactive");
   const matchPool = clinicStaff.length > 0 ? clinicStaff : staff;
 
-  const reset = () => { setStage("upload"); setRows([]); };
+  const reset = () => { setStage("upload"); setRows([]); setProgress(0); };
 
   const handleFile = async (e) => {
     const file = e.target.files?.[0];
@@ -23,14 +24,27 @@ export default function ImportScheduleDialog({ open, onOpenChange, clinic, staff
     setStage("processing");
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      const result = await base44.integrations.Core.InvokeLLM({
-        prompt: buildExtractionPrompt(clinic, matchPool),
-        file_urls: [file_url],
-        response_json_schema: extractionSchema,
-        model: "claude_sonnet_4_6",
-      });
-      const entries = result?.entries || [];
+      const entries = [];
+      for (let week = 1; week <= 6; week++) {
+        setProgress(week);
+        const result = await base44.integrations.Core.InvokeLLM({
+          prompt: buildWeekExtractionPrompt(clinic, matchPool, week),
+          file_urls: [file_url],
+          response_json_schema: extractionSchema,
+          model: "claude_sonnet_4_6",
+        });
+        const weekEntries = result?.entries || [];
+        if (weekEntries.length === 0) break;
+        entries.push(...weekEntries);
+      }
+      const seen = new Set();
       const parsed = entries
+        .filter((en) => {
+          const key = `${en.date}__${en.shift_label}__${en.staff_name}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
         .filter((en) => en.date && en.staff_name)
         .map((en) => {
           const st = matchShiftType(en.shift_label, clinic.shift_types);
@@ -49,6 +63,9 @@ export default function ImportScheduleDialog({ open, onOpenChange, clinic, staff
         .sort((a, b) => (a.date > b.date ? 1 : a.date < b.date ? -1 : 0));
       setRows(parsed);
       setStage("preview");
+      if (parsed.length === 0) {
+        toast({ title: "לא זוהו משמרות בקובץ", description: "נסה להעלות תמונה חדה יותר או קובץ של חודש בודד.", variant: "destructive" });
+      }
     } catch (err) {
       setStage("upload");
       toast({ title: "שגיאה בקריאת הקובץ", description: "נסה קובץ ברור יותר או פורמט אחר.", variant: "destructive" });
@@ -113,7 +130,7 @@ export default function ImportScheduleDialog({ open, onOpenChange, clinic, staff
         {stage === "processing" && (
           <div className="py-16 flex flex-col items-center gap-3">
             <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-            <p className="text-sm text-muted-foreground">מנתח את הסידור… זה עשוי לקחת עד דקה</p>
+            <p className="text-sm text-muted-foreground">מנתח את הסידור… שבוע {progress} מתוך 6</p>
           </div>
         )}
 
@@ -121,7 +138,7 @@ export default function ImportScheduleDialog({ open, onOpenChange, clinic, staff
           <div className="flex-1 overflow-hidden flex flex-col gap-3">
             <div className="flex flex-wrap gap-3 text-sm">
               <span className="inline-flex items-center gap-1.5 text-primary">
-                <CheckCircle2 className="w-4 h-4" /> {importable.length} משמרות זוהו
+                <CheckCircle2 className="w-4 h-4" /> {rows.length} משמרות זוהו ({importable.length} משויכות)
               </span>
               {unmatchedNames.length > 0 && (
                 <span className="inline-flex items-center gap-1.5 text-destructive">

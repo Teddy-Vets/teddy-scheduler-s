@@ -64,6 +64,15 @@ export const extractionSchema = {
   },
 };
 
+/** Prompt for extracting a single week-block (1-based) out of a monthly schedule table. */
+export function buildWeekExtractionPrompt(clinic, staffList, weekIndex) {
+  return `${buildExtractionPrompt(clinic, staffList)}
+
+חשוב: הטבלה מכילה כמה בלוקים של שבועות (כל בלוק מתחיל בשורת כותרת עם ימי השבוע והתאריכים).
+החזר רשומות **רק עבור בלוק השבוע מספר ${weekIndex}** (נספר מלמעלה למטה, הבלוק העליון הוא 1).
+אם אין בלוק שבוע מספר ${weekIndex} בקובץ — החזר entries ריק.`;
+}
+
 export function buildExtractionPrompt(clinic, staffList) {
   const shiftNames = (clinic.shift_types || []).map((t) => t.name).join(", ") || "לא הוגדרו";
   const staffNames = staffList.map((s) => s.name).join(", ") || "אין";
