@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, FileUp, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import ImportPreviewRow from "./ImportPreviewRow";
-import { matchStaff, matchShiftType, extractionSchema, buildWeekExtractionPrompt } from "@/lib/scheduleImport";
+import { matchStaff, matchShiftType, extractionSchema, buildExtractionPrompt, buildWeekExtractionPrompt } from "@/lib/scheduleImport";
 
 export default function ImportScheduleDialog({ open, onOpenChange, clinic, staff, onImported }) {
   const [stage, setStage] = useState("upload"); // upload | processing | preview | importing
@@ -25,17 +25,25 @@ export default function ImportScheduleDialog({ open, onOpenChange, clinic, staff
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       const entries = [];
-      for (let week = 1; week <= 6; week++) {
-        setProgress(week);
-        const result = await base44.integrations.Core.InvokeLLM({
-          prompt: buildWeekExtractionPrompt(clinic, matchPool, week),
-          file_urls: [file_url],
-          response_json_schema: extractionSchema,
-          model: "claude_sonnet_4_6",
-        });
-        const weekEntries = result?.entries || [];
-        if (weekEntries.length === 0) break;
-        entries.push(...weekEntries);
+      setProgress(0);
+      const full = await base44.integrations.Core.InvokeLLM({
+        prompt: buildExtractionPrompt(clinic, matchPool),
+        file_urls: [file_url],
+        response_json_schema: extractionSchema,
+      });
+      entries.push(...(full?.entries || []));
+
+      // Large multi-week files sometimes get truncated — sweep week-by-week as well.
+      if (entries.length > 0) {
+        for (let week = 1; week <= 6; week++) {
+          setProgress(week);
+          const result = await base44.integrations.Core.InvokeLLM({
+            prompt: buildWeekExtractionPrompt(clinic, matchPool, week),
+            file_urls: [file_url],
+            response_json_schema: extractionSchema,
+          });
+          entries.push(...(result?.entries || []));
+        }
       }
       const seen = new Set();
       const parsed = entries
@@ -130,7 +138,7 @@ export default function ImportScheduleDialog({ open, onOpenChange, clinic, staff
         {stage === "processing" && (
           <div className="py-16 flex flex-col items-center gap-3">
             <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-            <p className="text-sm text-muted-foreground">מנתח את הסידור… שבוע {progress} מתוך 6</p>
+            <p className="text-sm text-muted-foreground">{progress === 0 ? "מנתח את הסידור…" : `משלים נתונים… שבוע ${progress} מתוך 6`}</p>
           </div>
         )}
 
