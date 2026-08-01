@@ -20,6 +20,8 @@ import ExpandedDayView from "../components/shifts/ExpandedDayView";
 import WeeklyShiftCountTable from "../components/shifts/WeeklyShiftCountTable";
 import ShiftRequestsList from "../components/shifts/ShiftRequestsList";
 import DuplicateWeekDialog from "../components/shifts/DuplicateWeekDialog";
+import ImportScheduleDialog from "../components/shifts/ImportScheduleDialog";
+import { FileUp } from "lucide-react";
 import { runSmartScheduler } from "../lib/smartScheduler";
 import { Copy } from "lucide-react";
 
@@ -39,6 +41,7 @@ export default function Shifts() {
   const [isCreatingShifts, setIsCreatingShifts] = useState(false);
   const [expandedDay, setExpandedDay] = useState(null);
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -181,6 +184,19 @@ export default function Shifts() {
                 <Copy className="w-4 h-4" /> שכפל שבוע
               </Button>
               <Button
+                onClick={() => {
+                  if (selectedClinicId === "all") {
+                    toast({ title: "יש לבחור מרפאה תחילה", description: "בחר מרפאה ספציפית כדי לייבא סידור מקובץ.", variant: "destructive" });
+                    return;
+                  }
+                  setImportDialogOpen(true);
+                }}
+                variant="outline"
+                className="gap-2"
+              >
+                <FileUp className="w-4 h-4" /> ייבוא מקובץ
+              </Button>
+              <Button
                 onClick={handleRunScheduler}
                 disabled={isScheduling}
                 variant="outline"
@@ -311,6 +327,14 @@ export default function Shifts() {
         shifts={filteredShifts}
         staff={staff}
         onShiftClick={(shift) => { setExpandedDay(null); setSelectedShift(shift); setCalDialogOpen(true); }}
+      />
+
+      <ImportScheduleDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        clinic={clinics.find((c) => c.id === selectedClinicId) || null}
+        staff={staff}
+        onImported={() => queryClient.invalidateQueries({ queryKey: ["shifts"] })}
       />
 
       <DuplicateWeekDialog
