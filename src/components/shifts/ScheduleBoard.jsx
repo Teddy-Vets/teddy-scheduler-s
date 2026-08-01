@@ -148,7 +148,7 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
           <thead>
             <tr className="bg-muted/60">
               {/* Staff header */}
-              <th className="sticky right-0 z-10 bg-muted/80 backdrop-blur text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[160px] min-w-[160px] border-b border-l border-border">
+              <th className="sticky right-0 z-30 bg-muted text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[160px] min-w-[160px] border-b border-l border-border">
                 עובד
               </th>
               {days.map((day) => {
@@ -189,12 +189,12 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
                 className="border-b border-border last:border-b-0 hover:bg-muted/20 transition-colors"
               >
                 {/* Staff name cell */}
-                <td className="sticky right-0 z-10 bg-card px-4 py-2 border-l border-border">
+                <td className="sticky right-0 z-30 bg-card px-4 py-2 border-l border-border w-[160px] min-w-[160px] max-w-[160px]">
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[11px] font-bold flex-shrink-0">
                       {member.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="text-xs font-semibold truncate">{member.name}</p>
                       <p className="text-[10px] text-muted-foreground">
                         {(Array.isArray(member.staff_role) ? member.staff_role : [member.staff_role].filter(Boolean)).map(r => r === "vet" ? "וטרינר" : r === "tech" ? "אח.ות וטרינר.ית" : "קבלה").join(", ")}
