@@ -154,7 +154,11 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
               </div>
               <div className="space-y-2">
                 <Label>תפקיד *</Label>
-                <div className="flex gap-3">
+                <div className="flex gap-3 flex-wrap">
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <Checkbox checked={form.staff_role.includes("surgery_tech")} onCheckedChange={() => toggleRole("surgery_tech")} />
+                    <span className="text-sm">טכנאי ניתוחים</span>
+                  </label>
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <Checkbox checked={form.staff_role.includes("vet")} onCheckedChange={() => toggleRole("vet")} />
                     <span className="text-sm">וטרינר</span>

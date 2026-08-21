@@ -1,7 +1,7 @@
 import React from "react";
 import { addDays, startOfWeek, format } from "date-fns";
 
-const ROLE_LABELS = { vet: "וטרינר", veterinarian: "וטרינר", tech: "אח.ות", technician: "אח.ות", receptionist: "קבלה" };
+const ROLE_LABELS = { vet: "וטרינר", veterinarian: "וטרינר", tech: "אח.ות", technician: "אח.ות", surgery_tech: "טכנאי ניתוחים", receptionist: "קבלה" };
 
 export default function WeeklyShiftCountTable({ shifts, staff, weekOffset }) {
   const weekStart = startOfWeek(addDays(new Date(), weekOffset * 7), { weekStartsOn: 0 });

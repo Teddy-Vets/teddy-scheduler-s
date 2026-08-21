@@ -13,6 +13,7 @@
         "enum": [
           "vet",
           "tech",
+          "surgery_tech",
           "receptionist"
         ]
       },
