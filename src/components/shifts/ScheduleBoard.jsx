@@ -230,31 +230,25 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
                         </button>
                       ) : (
                         <div className="flex flex-col gap-1">
-                          {/* Keep evening-only cells aligned to the bottom row */}
-                          {dayShifts.length > 0 && dayShifts.every((s) => (s.start_time || "") >= "12:00") && (
-                            <ShiftCell
-                              shift={null}
-                              dateStr={dateStr}
-                              staffMember={member}
-                              onCellClick={onCellClick}
-                            />
-                          )}
-                          {dayShifts.map((shift) => (
-                            <ShiftCell
-                              key={shift.id}
-                              shift={shift}
-                              dateStr={dateStr}
-                              staffMember={member}
-                              onCellClick={onCellClick}
-                            />
-                          ))}
-                          <ShiftCell
-                            shift={null}
-                            dateStr={dateStr}
-                            staffMember={member}
-                            onCellClick={onCellClick}
-                            isAddExtra={dayShifts.length > 0}
-                          />
+                          {/* Fixed slots: morning row on top, evening row below */}
+                          {(() => {
+                            const morning = dayShifts.filter((s) => (s.start_time || "00:00") < "12:00");
+                            const evening = dayShifts.filter((s) => (s.start_time || "00:00") >= "12:00");
+                            return (
+                              <>
+                                {morning.length > 0
+                                  ? morning.map((shift) => (
+                                      <ShiftCell key={shift.id} shift={shift} dateStr={dateStr} staffMember={member} onCellClick={onCellClick} />
+                                    ))
+                                  : <ShiftCell shift={null} dateStr={dateStr} staffMember={member} onCellClick={onCellClick} />}
+                                {evening.length > 0
+                                  ? evening.map((shift) => (
+                                      <ShiftCell key={shift.id} shift={shift} dateStr={dateStr} staffMember={member} onCellClick={onCellClick} />
+                                    ))
+                                  : <ShiftCell shift={null} dateStr={dateStr} staffMember={member} onCellClick={onCellClick} isAddExtra={morning.length > 0} />}
+                              </>
+                            );
+                          })()}
                         </div>
                       )}
                     </td>
