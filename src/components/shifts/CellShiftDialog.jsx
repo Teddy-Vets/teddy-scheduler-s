@@ -11,6 +11,7 @@ import { Trash2, UserRound } from "lucide-react";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
 import { getShiftColor } from "./ScheduleBoard";
+import { roleLabel } from "@/lib/roleLabels";
 
 export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, staffMember, clinics, staff = [], onSave, onDelete }) {
   const [form, setForm] = useState({ clinic_id: "", shift_type_id: "", status: "planned", start_time: "", end_time: "", staff_id: "", staff_name: "", staff_role: "" });
@@ -192,7 +193,7 @@ export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, st
                 <SelectContent>
                   {clinicStaff.map((m) => {
                     const roles = Array.isArray(m.staff_role) ? m.staff_role : (m.staff_role ? [m.staff_role] : []);
-                    const labels = roles.map(r => r === "vet" || r === "veterinarian" ? "וטרינר" : r === "tech" || r === "technician" ? "אח.ות וטרינר.ית" : "קבלה").join(", ");
+                    const labels = roles.map(roleLabel).join(", ");
                     return (
                       <SelectItem key={m.id} value={m.id}>
                         {m.name} · {labels}
@@ -215,7 +216,7 @@ export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, st
                     const roles = Array.isArray(selectedMember?.staff_role) ? selectedMember.staff_role : (selectedMember?.staff_role ? [selectedMember.staff_role] : ["vet"]);
                     return roles.map(r => (
                       <SelectItem key={r} value={r}>
-                        {r === "vet" || r === "veterinarian" ? "וטרינר" : r === "tech" || r === "technician" ? "אח.ות וטרינר.ית" : "קבלה"}
+                        {roleLabel(r)}
                       </SelectItem>
                     ));
                   })()}
