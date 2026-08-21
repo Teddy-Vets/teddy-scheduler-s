@@ -4,6 +4,7 @@ import { he } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Maximize2 } from "lucide-react";
 import { getIsraeliHolidays, getHolidayEves } from "@/lib/israeliHolidays";
+import { roleLabel } from "@/lib/roleLabels";
 
 const DAY_NAMES = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
 
@@ -136,7 +137,7 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExp
                     const member = staffMap[shift.staff_id];
                     const role = getEffectiveRole(shift);
                     const color = getShiftColor(shift, role);
-                    const roleLabel = (role === "vet" || role === "veterinarian") ? "וטרינר" : (role === "tech" || role === "technician") ? "אח.ות וטרינר.ית" : role === "receptionist" ? "קבלה" : null;
+                    const label = roleLabel(role);
                     return (
                       <button
                         key={shift.id}
@@ -147,9 +148,9 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExp
                       >
                         <div className="font-semibold truncate">{shift.staff_name || member?.name || "—"}</div>
 
-                        {roleLabel && (
+                        {label && (
                           <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 mt-0.5 border-current">
-                            {roleLabel}
+                            {label}
                           </Badge>
                         )}
                       </button>
