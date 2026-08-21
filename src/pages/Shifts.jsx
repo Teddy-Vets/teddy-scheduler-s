@@ -87,11 +87,12 @@ export default function Shifts() {
     setCellDialogOpen(true);
   };
 
-  const handleCellSave = (data) => {
+  const handleCellSave = (payload) => {
+    const items = Array.isArray(payload) ? payload : [payload];
     if (cellShift) {
-      updateMutation.mutate({ id: cellShift.id, data });
+      updateMutation.mutate({ id: cellShift.id, data: items[0] });
     } else {
-      createMutation.mutate(data);
+      items.forEach((data) => createMutation.mutate(data));
       setCellDialogOpen(false);
     }
   };

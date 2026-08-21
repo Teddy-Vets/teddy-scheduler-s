@@ -14,9 +14,12 @@ import { getShiftColor } from "./ScheduleBoard";
 
 export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, staffMember, clinics, staff = [], onSave, onDelete }) {
   const [form, setForm] = useState({ clinic_id: "", shift_type_id: "", status: "planned", start_time: "", end_time: "", staff_id: "", staff_name: "", staff_role: "" });
+  // Extra shift types selected for the same day (only when creating a new assignment)
+  const [extraTypeIds, setExtraTypeIds] = useState([]);
 
   useEffect(() => {
     if (!open) return;
+    setExtraTypeIds([]);
     if (shift) {
       const roles = Array.isArray(staffMember?.staff_role) ? staffMember.staff_role : (staffMember?.staff_role ? [staffMember.staff_role] : []);
       setForm({
@@ -41,6 +44,7 @@ export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, st
 
   const handleShiftTypeChange = (typeId) => {
     const st = shiftTypes.find((t) => t.id === typeId);
+    setExtraTypeIds((prev) => prev.filter((id) => id !== typeId));
     setForm((prev) => ({
       ...prev,
       shift_type_id: typeId,
@@ -59,7 +63,7 @@ export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, st
     const st = shiftTypes.find((t) => t.id === form.shift_type_id);
     const resolvedStaffId = form.staff_id || staffMember?.id;
     const resolvedStaffName = form.staff_name || staffMember?.name;
-    onSave({
+    const base = {
       ...form,
       date: dateStr,
       staff_id: resolvedStaffId,
@@ -67,7 +71,19 @@ export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, st
       clinic_name: selectedClinic?.name || "",
       shift_type_name: st?.name || "",
       is_hard_shift: st?.is_hard || false,
+    };
+    const extras = extraTypeIds.map((id) => {
+      const t = shiftTypes.find((x) => x.id === id);
+      return {
+        ...base,
+        shift_type_id: id,
+        shift_type_name: t?.name || "",
+        start_time: t?.start_time || "",
+        end_time: t?.end_time || "",
+        is_hard_shift: t?.is_hard || false,
+      };
     });
+    onSave([base, ...extras]);
   };
 
   const clinicStaff = staff.filter((m) => m.assigned_clinic_ids?.includes(form.clinic_id) && m.status !== "inactive");
@@ -119,6 +135,30 @@ export default function CellShiftDialog({ open, onOpenChange, shift, dateStr, st
                   })}
                 </SelectContent>
               </Select>
+              {!shift && form.shift_type_id && (
+                <div className="pt-1 space-y-1.5">
+                  <p className="text-xs text-muted-foreground">הוסף משמרות נוספות באותו יום:</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {shiftTypes.filter((st) => st.id !== form.shift_type_id).map((st) => {
+                      const isActive = extraTypeIds.includes(st.id);
+                      return (
+                        <button
+                          key={st.id}
+                          type="button"
+                          onClick={() => setExtraTypeIds((prev) => prev.includes(st.id) ? prev.filter((id) => id !== st.id) : [...prev, st.id])}
+                          className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+                            isActive
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-background text-muted-foreground border-input hover:border-primary/50 hover:text-foreground"
+                          }`}
+                        >
+                          {st.name} · {st.start_time}–{st.end_time}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
