@@ -115,14 +115,7 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
     if (dayPrefs.includes(shiftTypeId)) {
       dayPrefs = dayPrefs.filter(id => id !== shiftTypeId);
     } else {
-      if (dayPrefs.length < 2) {
-        dayPrefs.push(shiftTypeId);
-      } else {
-        // Already 2 selected, maybe replace the second one or do nothing
-        // Or we can just limit to 2
-        // If we want exactly up to 2:
-        dayPrefs[1] = shiftTypeId; // replace the last one if full
-      }
+      dayPrefs.push(shiftTypeId);
     }
     
     if (dayPrefs.length === 0) {
@@ -261,7 +254,7 @@ export default function StaffFormDialog({ open, onOpenChange, onSave, member, cl
 
             <div className="space-y-3">
               <Label>העדפות משמרת לפי יום</Label>
-              <p className="text-xs text-muted-foreground -mt-1">בחר לכל יום את סוג המשמרת המועדף. השיבוץ החכם יעדיף את הבחירות הללו.</p>
+              <p className="text-xs text-muted-foreground -mt-1">בחר לכל יום סוג משמרת אחד או יותר (למשל גם בוקר וגם ערב). השיבוץ החכם יעדיף את הבחירות הללו.</p>
               {uniqueShiftTypes.length === 0 ? (
                 <p className="text-xs text-muted-foreground italic">שייך עובד זה למרפאה תחילה כדי לראות סוגי משמרת.</p>
               ) : (
