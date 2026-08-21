@@ -111,6 +111,10 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
     if (!shiftMap[key]) shiftMap[key] = [];
     shiftMap[key].push(sh);
   });
+  // Sort each cell's shifts chronologically (morning before evening)
+  Object.values(shiftMap).forEach((list) =>
+    list.sort((a, b) => (a.start_time || "99:99").localeCompare(b.start_time || "99:99"))
+  );
 
   // Legend
   const legend = [
