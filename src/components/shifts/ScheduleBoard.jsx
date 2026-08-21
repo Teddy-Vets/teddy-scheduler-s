@@ -232,8 +232,14 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
                         <div className="flex flex-col gap-1">
                           {/* Fixed slots: morning row on top, evening row below */}
                           {(() => {
-                            const morning = dayShifts.filter((s) => (s.start_time || "00:00") < "12:00");
-                            const evening = dayShifts.filter((s) => (s.start_time || "00:00") >= "12:00");
+                            const isMorning = (s) => {
+                              const label = getShiftColor(s.shift_type_name).label;
+                              if (label === "בוקר") return true;
+                              if (label === "ערב" || label === "צהריים") return false;
+                              return (s.start_time || "00:00") < "12:00";
+                            };
+                            const morning = dayShifts.filter(isMorning);
+                            const evening = dayShifts.filter((s) => !isMorning(s));
                             return (
                               <>
                                 {morning.length > 0
