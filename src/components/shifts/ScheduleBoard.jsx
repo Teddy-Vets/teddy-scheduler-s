@@ -230,6 +230,15 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
                         </button>
                       ) : (
                         <div className="flex flex-col gap-1">
+                          {/* Keep evening-only cells aligned to the bottom row */}
+                          {dayShifts.length > 0 && dayShifts.every((s) => (s.start_time || "") >= "12:00") && (
+                            <ShiftCell
+                              shift={null}
+                              dateStr={dateStr}
+                              staffMember={member}
+                              onCellClick={onCellClick}
+                            />
+                          )}
                           {dayShifts.map((shift) => (
                             <ShiftCell
                               key={shift.id}
