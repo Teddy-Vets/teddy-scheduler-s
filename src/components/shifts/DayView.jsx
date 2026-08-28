@@ -67,7 +67,9 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExp
           byShiftType[key].push(s);
         });
         // Sort shift types by their earliest start_time
-        const sortedEntries = Object.entries(byShiftType).sort(([, aShifts], [, bShifts]) => {
+        const isSurgery = (name) => (name || "").includes("ניתוח");
+        const sortedEntries = Object.entries(byShiftType).sort(([aName, aShifts], [bName, bShifts]) => {
+          if (isSurgery(aName) !== isSurgery(bName)) return isSurgery(aName) ? -1 : 1;
           const aTime = aShifts[0]?.start_time || "00:00";
           const bTime = bShifts[0]?.start_time || "00:00";
           return aTime.localeCompare(bTime);
