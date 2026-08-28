@@ -130,7 +130,7 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExp
                 return orderA - orderB;
               });
               return (
-                <div key={typeName} className="space-y-1">
+                <div key={typeName} className={`space-y-1 ${isSurgery(typeName) ? "bg-muted rounded-lg p-1 -mx-0.5" : ""}`}>
                   {entryIdx > 0 && <hr className="my-1" style={{ borderTop: "3px solid #d7764c" }} />}
                   <div dir="rtl" className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide px-1">
                     {typeName} {typeShifts[0]?.start_time}–{typeShifts[0]?.end_time}
