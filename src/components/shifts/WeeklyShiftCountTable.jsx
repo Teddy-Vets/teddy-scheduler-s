@@ -12,15 +12,14 @@ export default function WeeklyShiftCountTable({ shifts, staff, weekOffset }) {
     (s) => s.date >= weekStartStr && s.date <= weekEndStr && s.status !== "cancelled"
   );
 
-  // Only show staff who have at least one shift this week
+  // Show all active staff, including those with no shifts this week
   const staffWithShifts = staff
     .filter((s) => s.status !== "inactive")
-    .map((s) => {
-      const count = weekShifts.filter((sh) => sh.staff_id === s.id).length;
-      return { ...s, shiftCount: count };
-    })
-    .filter((s) => s.shiftCount > 0)
-    .sort((a, b) => b.shiftCount - a.shiftCount);
+    .map((s) => ({
+      ...s,
+      shiftCount: weekShifts.filter((sh) => sh.staff_id === s.id).length,
+    }))
+    .sort((a, b) => b.shiftCount - a.shiftCount || a.name.localeCompare(b.name, "he"));
 
   if (staffWithShifts.length === 0) return null;
 

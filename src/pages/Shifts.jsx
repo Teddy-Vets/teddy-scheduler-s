@@ -279,7 +279,11 @@ export default function Shifts() {
             selectedClinicId={selectedClinicId}
           />
           <div className="mt-4">
-            <WeeklyShiftCountTable shifts={filteredShifts} staff={staff} weekOffset={weekOffset} />
+            <WeeklyShiftCountTable
+              shifts={filteredShifts}
+              staff={selectedClinicId === "all" ? staff : staff.filter((s) => (s.assigned_clinic_ids || []).includes(selectedClinicId))}
+              weekOffset={weekOffset}
+            />
           </div>
         </TabsContent>
 
