@@ -19,6 +19,7 @@ import DayView from "../components/shifts/DayView";
 import ExpandedDayView from "../components/shifts/ExpandedDayView";
 import WeeklyShiftCountTable from "../components/shifts/WeeklyShiftCountTable";
 import ShiftRequestsList from "../components/shifts/ShiftRequestsList";
+import InactiveStaffAlert from "../components/shifts/InactiveStaffAlert";
 import DuplicateWeekDialog from "../components/shifts/DuplicateWeekDialog";
 import ImportScheduleDialog from "../components/shifts/ImportScheduleDialog";
 import { FileUp } from "lucide-react";
@@ -235,6 +236,8 @@ export default function Shifts() {
           <ChevronLeft className="w-5 h-5" />
         </Button>
       </div>
+
+      <InactiveStaffAlert shifts={filteredShifts} staff={staff} weekOffset={weekOffset} />
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
