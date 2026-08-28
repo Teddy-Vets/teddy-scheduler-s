@@ -10,6 +10,7 @@ import PeriodSelector from "../components/dashboard/PeriodSelector";
 import SalaryForecast from "../components/dashboard/SalaryForecast";
 import DailyHoursGrid from "../components/dashboard/DailyHoursGrid";
 import VetHoursCard from "../components/dashboard/VetHoursCard";
+import TechHoursCard from "../components/dashboard/TechHoursCard";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
@@ -115,6 +116,7 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <VetHoursCard clinics={clinics} selectedClinicId={selectedClinicId} periodMode={periodMode} periodOffset={periodOffset} shifts={periodShifts} staff={filteredStaff} />
+        <TechHoursCard clinics={clinics} selectedClinicId={selectedClinicId} periodMode={periodMode} periodOffset={periodOffset} shifts={periodShifts} staff={filteredStaff} />
         <SalaryForecast staff={filteredStaff} shifts={periodShifts} clinics={clinics} />
       </div>
 
