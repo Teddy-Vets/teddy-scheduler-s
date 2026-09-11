@@ -17,7 +17,7 @@ function getShiftColor(shift, role) {
   return { className: "border text-rose-900", style: { backgroundColor: "#fff0f0", borderColor: "#fca5a5" } };
 }
 
-export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExpandDay, clinics, selectedClinicId }) {
+export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExpandDay, clinics, selectedClinicId, closedDays = {} }) {
   const weekStart = startOfWeek(addDays(new Date(), weekOffset * 7), { weekStartsOn: 0 });
   const allDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const today = new Date();
@@ -106,6 +106,12 @@ export default function DayView({ shifts, staff, weekOffset, onShiftClick, onExp
                   <span className={isToday ? "text-primary-foreground/90" : "text-amber-600"}>ערב חג</span>
                 )}
               </div>
+
+              {closedDays[dateStr] && (
+                <div dir="rtl" className={`mt-1 text-[10px] font-semibold rounded-md px-1 py-0.5 ${isToday ? "bg-primary-foreground/20 text-primary-foreground" : "bg-rose-100 text-rose-700"}`}>
+                  {closedDays[dateStr].note || "סגור"}
+                </div>
+              )}
 
               {dayShifts.length > 0 && (
                 <button

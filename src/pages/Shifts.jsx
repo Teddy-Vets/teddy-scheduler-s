@@ -326,6 +326,7 @@ export default function Shifts() {
             onExpandDay={(day) => setExpandedDay(day)}
             clinics={clinics}
             selectedClinicId={selectedClinicId}
+            closedDays={closedDays}
           />
           <div className="mt-4">
             <WeeklyShiftCountTable
