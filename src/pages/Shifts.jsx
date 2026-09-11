@@ -20,6 +20,7 @@ import ExpandedDayView from "../components/shifts/ExpandedDayView";
 import WeeklyShiftCountTable from "../components/shifts/WeeklyShiftCountTable";
 import ShiftRequestsList from "../components/shifts/ShiftRequestsList";
 import InactiveStaffAlert from "../components/shifts/InactiveStaffAlert";
+import CloseDayDialog from "../components/shifts/CloseDayDialog";
 import DuplicateWeekDialog from "../components/shifts/DuplicateWeekDialog";
 import ImportScheduleDialog from "../components/shifts/ImportScheduleDialog";
 import { FileUp } from "lucide-react";
@@ -43,6 +44,7 @@ export default function Shifts() {
   const [expandedDay, setExpandedDay] = useState(null);
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [closeDayDate, setCloseDayDate] = useState(null);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -58,6 +60,42 @@ export default function Shifts() {
   const { data: staff = [] } = useQuery({
     queryKey: ["staff"],
     queryFn: () => base44.entities.Staff.list(),
+  });
+  const { data: overrides = [] } = useQuery({
+    queryKey: ["clinicDayOverrides"],
+    queryFn: () => base44.entities.ClinicDayOverride.list("-date", 500),
+  });
+
+  const closedDays = Object.fromEntries(
+    overrides
+      .filter((o) => o.is_closed && (selectedClinicId === "all" || o.clinic_id === selectedClinicId))
+      .map((o) => [o.date, o])
+  );
+
+  const closeDayMutation = useMutation({
+    mutationFn: async ({ existing, date, note }) => {
+      if (existing) return base44.entities.ClinicDayOverride.update(existing.id, { note, is_closed: true });
+      const clinic = clinics.find((c) => c.id === selectedClinicId);
+      return base44.entities.ClinicDayOverride.create({
+        clinic_id: selectedClinicId,
+        clinic_name: clinic?.name,
+        date,
+        is_closed: true,
+        note,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clinicDayOverrides"] });
+      setCloseDayDate(null);
+    },
+  });
+
+  const reopenDayMutation = useMutation({
+    mutationFn: (id) => base44.entities.ClinicDayOverride.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clinicDayOverrides"] });
+      setCloseDayDate(null);
+    },
   });
 
   const createMutation = useMutation({
@@ -268,6 +306,14 @@ export default function Shifts() {
             selectedClinicId={selectedClinicId}
             onCellClick={handleCellClick}
             isScheduling={isScheduling}
+            closedDays={closedDays}
+            onDayHeaderClick={(day) => {
+              if (selectedClinicId === "all") {
+                toast({ title: "יש לבחור מרפאה תחילה", description: "בחר מרפאה ספציפית כדי לסגור יום.", variant: "destructive" });
+                return;
+              }
+              setCloseDayDate(format(day, "yyyy-MM-dd"));
+            }}
           />
         </TabsContent>
 
@@ -343,6 +389,16 @@ export default function Shifts() {
         clinic={clinics.find((c) => c.id === selectedClinicId) || null}
         staff={staff}
         onImported={() => queryClient.invalidateQueries({ queryKey: ["shifts"] })}
+      />
+
+      <CloseDayDialog
+        open={!!closeDayDate}
+        onOpenChange={(open) => { if (!open) setCloseDayDate(null); }}
+        date={closeDayDate}
+        clinicName={clinics.find((c) => c.id === selectedClinicId)?.name}
+        existing={closeDayDate ? closedDays[closeDayDate] : null}
+        onClose={(note) => closeDayMutation.mutate({ existing: closedDays[closeDayDate], date: closeDayDate, note })}
+        onReopen={(id) => reopenDayMutation.mutate(id)}
       />
 
       <DuplicateWeekDialog

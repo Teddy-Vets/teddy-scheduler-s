@@ -72,7 +72,7 @@ function ShiftCell({ shift, onCellClick, dateStr, staffMember, isAddExtra }) {
   );
 }
 
-export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, selectedClinicId, onCellClick, isScheduling }) {
+export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, selectedClinicId, onCellClick, isScheduling, closedDays = {}, onDayHeaderClick }) {
   const today = new Date();
   const weekStart = startOfWeek(addDays(today, weekOffset * 7), { weekStartsOn: 0 });
   
@@ -157,20 +157,27 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
               </th>
               {days.map((day) => {
                 const isToday = isSameDay(day, today);
+                const closed = closedDays[format(day, "yyyy-MM-dd")];
                 return (
                   <th
                     key={day.toISOString()}
-                    className={`px-2 py-3 text-center border-b border-r border-border last:border-r-0 min-w-[110px] ${
-                      isToday ? "bg-primary/10" : ""
+                    onClick={() => onDayHeaderClick?.(day)}
+                    title="לחץ לסגירת/פתיחת היום"
+                    className={`px-2 py-3 text-center border-b border-r border-border last:border-r-0 min-w-[110px] cursor-pointer hover:bg-muted ${
+                      closed ? "bg-rose-100" : isToday ? "bg-primary/10" : ""
                     }`}
                   >
-                    <p className={`text-xs font-semibold uppercase tracking-wider ${isToday ? "text-primary" : "text-muted-foreground"}`}>
+                    <p className={`text-xs font-semibold uppercase tracking-wider ${closed ? "text-rose-700" : isToday ? "text-primary" : "text-muted-foreground"}`}>
                       {DAYS_HE[day.getDay()]}
                     </p>
-                    <p className={`text-lg font-bold mt-0.5 ${isToday ? "text-primary" : "text-foreground"}`}>
+                    <p className={`text-lg font-bold mt-0.5 ${closed ? "text-rose-700" : isToday ? "text-primary" : "text-foreground"}`}>
                       {format(day, "d")}
                     </p>
-                    <p className="text-[10px] text-muted-foreground">{format(day, "MMM", { locale: he })}</p>
+                    {closed ? (
+                      <p className="text-[10px] font-semibold text-rose-700 truncate">{closed.note || "סגור"}</p>
+                    ) : (
+                      <p className="text-[10px] text-muted-foreground">{format(day, "MMM", { locale: he })}</p>
+                    )}
                   </th>
                 );
               })}
@@ -212,15 +219,20 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
                   const dayShifts = shiftMap[`${member.id}__${dateStr}`] || [];
                   const isDayOff = member.regular_days_off?.includes(day.getDay());
                   const isToday = isSameDay(day, today);
+                  const closed = closedDays[dateStr];
 
                   return (
                     <td
                       key={dateStr}
                       className={`px-1.5 py-1.5 border-r border-border last:border-r-0 align-top ${
-                        isToday ? "bg-primary/5" : isDayOff && dayShifts.length === 0 ? "bg-muted/30" : ""
+                        closed ? "bg-rose-50" : isToday ? "bg-primary/5" : isDayOff && dayShifts.length === 0 ? "bg-muted/30" : ""
                       }`}
                     >
-                      {isDayOff && dayShifts.length === 0 ? (
+                      {closed && dayShifts.length === 0 ? (
+                        <div className="w-full min-h-[56px] flex items-center justify-center text-[10px] font-medium text-rose-400">
+                          סגור
+                        </div>
+                      ) : isDayOff && dayShifts.length === 0 ? (
                         <button
                           onClick={() => onCellClick(null, dateStr, member)}
                           className="w-full min-h-[56px] flex items-center justify-center rounded-lg border-2 border-dashed border-transparent hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 group relative"
