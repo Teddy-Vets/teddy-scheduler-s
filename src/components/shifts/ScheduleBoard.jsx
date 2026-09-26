@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { format, startOfWeek, addDays, isSameDay } from "date-fns";
 import { he } from "date-fns/locale";
 import { motion } from "framer-motion";
-import { Plus, Zap } from "lucide-react";
+import { Plus, Zap, CalendarPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -72,7 +72,7 @@ function ShiftCell({ shift, onCellClick, dateStr, staffMember, isAddExtra }) {
   );
 }
 
-export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, selectedClinicId, onCellClick, isScheduling, closedDays = {}, onDayHeaderClick }) {
+export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, selectedClinicId, onCellClick, isScheduling, closedDays = {}, onDayHeaderClick, onFillWeek }) {
   const today = new Date();
   const weekStart = startOfWeek(addDays(today, weekOffset * 7), { weekStartsOn: 0 });
   
@@ -211,6 +211,15 @@ export default function ScheduleBoard({ shifts, staff, clinics, weekOffset, sele
                         {(Array.isArray(member.staff_role) ? member.staff_role : [member.staff_role].filter(Boolean)).map(r => r === "vet" ? "וטרינר" : r === "tech" ? "אח.ות וטרינר.ית" : "קבלה").join(", ")}
                       </p>
                     </div>
+                    {onFillWeek && selectedClinicId && selectedClinicId !== "all" && (
+                      <button
+                        onClick={() => onFillWeek(member)}
+                        title="שבץ בכל המשמרות האפשריות השבוע"
+                        className="p-1 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors flex-shrink-0"
+                      >
+                        <CalendarPlus className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </td>
                 {/* Day cells */}

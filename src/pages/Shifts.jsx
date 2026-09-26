@@ -26,6 +26,7 @@ import ImportScheduleDialog from "../components/shifts/ImportScheduleDialog";
 import { FileUp } from "lucide-react";
 import { runSmartScheduler } from "../lib/smartScheduler";
 import { Copy } from "lucide-react";
+import { buildWeekShiftsForStaff } from "../lib/fillWeekShifts";
 
 export default function Shifts() {
   const [weekOffset, setWeekOffset] = useState(0);
@@ -134,6 +135,20 @@ export default function Shifts() {
       items.forEach((data) => createMutation.mutate(data));
       setCellDialogOpen(false);
     }
+  };
+
+  const handleFillWeek = async (member) => {
+    const clinic = clinics.find((c) => c.id === selectedClinicId);
+    if (!clinic) return;
+    const newShifts = buildWeekShiftsForStaff({ member, clinic, weekOffset, existingShifts: shifts, closedDays });
+    if (newShifts.length === 0) {
+      toast({ title: "אין משמרות פנויות לשיבוץ", description: `${member.name} כבר משובץ/ת בכל המשמרות האפשריות השבוע.` });
+      return;
+    }
+    if (!window.confirm(`לשבץ את ${member.name} ב-${newShifts.length} משמרות השבוע?`)) return;
+    await base44.entities.Shift.bulkCreate(newShifts);
+    queryClient.invalidateQueries({ queryKey: ["shifts"] });
+    toast({ title: `${newShifts.length} משמרות נוספו`, description: "ניתן למחוק משמרות ספציפיות בלחיצה עליהן." });
   };
 
   const handleCalSave = (data) => {
@@ -307,6 +322,7 @@ export default function Shifts() {
             onCellClick={handleCellClick}
             isScheduling={isScheduling}
             closedDays={closedDays}
+            onFillWeek={handleFillWeek}
             onDayHeaderClick={(day) => {
               if (selectedClinicId === "all") {
                 toast({ title: "יש לבחור מרפאה תחילה", description: "בחר מרפאה ספציפית כדי לסגור יום.", variant: "destructive" });
